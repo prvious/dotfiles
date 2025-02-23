@@ -1,0 +1,22 @@
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    network: "traefik"
+    exposedByDefault: false
+
+api:
+  insecure: true
+  dashboard: true
+
+log:
+  level: DEBUG
+  # filePath: "/var/log/traefik/traefik.log"
+  
+accessLog:
+  # filePath: "/var/log/traefik/access.log"
