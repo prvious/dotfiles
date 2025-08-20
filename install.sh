@@ -181,6 +181,8 @@ main() {
     if ! command_exists bun; then
         echo "📦 Installing Bun..."
         curl -fsSL https://bun.sh/install | bash
+        # Add Bun to PATH for current session
+        export PATH="$HOME/.bun/bin:$PATH"
     else
         echo "✅ Bun already installed"
     fi

@@ -52,6 +52,9 @@ jobs:
       run: |
         echo "🔍 Verifying essential tools installation..."
         
+        # Update PATH to include Bun installation directory
+        export PATH="$HOME/.bun/bin:$PATH"
+        
         tools=(
           "git:Git version control"
           "docker:Docker containerization"
