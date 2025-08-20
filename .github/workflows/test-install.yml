@@ -212,27 +212,6 @@ jobs:
           echo "ℹ️  Docker Desktop app not found at /Applications/Docker.app"
         fi
         
-        if docker info >/dev/null 2>&1; then
-          echo "✅ Docker daemon is running!"
-          
-          # Test network creation (the install script should have created these)
-          echo "🔍 Checking for Docker networks..."
-          if docker network ls | grep -q traefik; then
-            echo "✅ Traefik network exists"
-          else
-            echo "ℹ️  Traefik network not found (will be created on first run)"
-          fi
-          
-          if docker network ls | grep -q haproxy; then
-            echo "✅ HAProxy network exists"
-          else
-            echo "ℹ️  HAProxy network not found (will be created on first run)"
-          fi
-        else
-          echo "ℹ️  Docker daemon not ready within 30 seconds (expected in CI)"
-          echo "✅ Docker Desktop installed successfully, CLI tools available"
-        fi
-        
     - name: Verify directories created
       run: |
         test -d "$HOME/.local/bin"
