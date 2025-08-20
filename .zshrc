@@ -1,30 +1,33 @@
 # If you come from bash you might have to change your $PATH.
-export PATH="$HOME/bin:$HOME/.local/bin:/usr/local/bin:$HOME/.local/share/fzf/bin:$HOME/.config/composer/vendor/bin:$PATH"
-FZF_HOME="${HOME}/.local/share/fzf"
+export PNPM_HOME="$HOME/Library/pnpm"
 export ZSH="$HOME/.oh-my-zsh"
+FZF_HOME="${HOME}/.local/share/fzf"
+
+export PATH="$HOME/bin:$HOME/.local/bin:/usr/local/bin:$FZF_HOME/bin:$HOME/.composer/vendor/bin:$HOME/.cargo/bin:$PNPM_HOME:$PATH"
 
 
 # Download fzf, if it's not there yet
 if [ ! -d "$FZF_HOME" ]; then
    mkdir -p "$(dirname $FZF_HOME)"
    git clone --depth 1 https://github.com/junegunn/fzf.git "$FZF_HOME"
-   $FZF_HOME/install -y
+   $FZF_HOME/install
 fi
 
 # Load completions
 # Only have compinit check the completion cache for staleness once per day
 #  https://medium.com/@dannysmith/little-thing-2-speeding-up-zsh-f1860390f92
+fpath=($HOME/.docker/completions $fpath)
 autoload -Uz compinit
 if [[ -n ${ZDOTDIR}/.zcompdump(#qN.mh+24) ]]; then
-        compinit;
+    compinit;
 else
-        compinit -C;
+    compinit -C;
 fi;
 
 
 source <(fzf --zsh)
 
-plugins=(git docker docker-compose aws gh zoxide vscode alias-finder fzf zsh-autosuggestions fzf-tab ssh ssh-agent fnm)
+plugins=(git docker docker-compose aws gh zoxide vscode alias-finder zsh-autosuggestions fzf fzf-tab ssh ssh-agent fnm)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -75,12 +78,26 @@ zstyle ':fzf-tab:*' fzf-flags --color=fg:1,fg+:2 --bind=tab:accept
 zstyle ':fzf-tab:*' use-fzf-default-opts yes
 zstyle ':fzf-tab:*' switch-group '<' '>'
 
+
 eval "$(starship init zsh)"
 export FPATH="~/.eza/completions/zsh:$FPATH"
 
-
 # fnm
-FNM_PATH="/home/clovis/.local/share/fnm"
+FNM_PATH="/Users/clovismuneza/Library/Application Support/fnm"
 if [ -d "$FNM_PATH" ]; then
-  export PATH="/home/clovis/.local/share/fnm:$PATH"
-  eval "`fnm env`"
+  export PATH="/Users/clovismuneza/Library/Application Support/fnm:$PATH"
+  eval "$(fnm env --use-on-cd --shell zsh)"
+fi
+
+. ~/.env
+. ~/.fnm.sh
+. ~/.functions.sh
+
+# bun completions
+[ -s "/Users/clovismuneza/.oh-my-zsh/completions/_bun" ] && source "/Users/clovismuneza/.oh-my-zsh/completions/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="/opt/homebrew/opt/mysql-client/bin:$BUN_INSTALL/bin:$PATH"
+# opencode
+export PATH=/Users/clovismuneza/.opencode/bin:$PATH

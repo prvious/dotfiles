@@ -1,0 +1,132 @@
+name: Test Installation Script
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'install.sh'
+      - '.zshrc'
+      - '.github/workflows/test-install.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'install.sh'
+      - '.zshrc'
+      - '.github/workflows/test-install.yml'
+  workflow_dispatch:
+
+jobs:
+  test-install:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Make install script executable
+      run: chmod +x install.sh
+      
+    - name: Verify script syntax
+      run: bash -n install.sh
+      
+    - name: Run install script
+      run: ./install.sh
+      
+    - name: Verify Homebrew installation
+      run: |
+        which brew
+        brew --version
+        
+    - name: Verify Oh My Zsh installation
+      run: |
+        test -d "$HOME/.oh-my-zsh"
+        echo "✅ Oh My Zsh installed"
+        
+    - name: Verify zsh plugins installation
+      run: |
+        test -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+        test -d "$HOME/.oh-my-zsh/custom/plugins/fzf-tab"
+        echo "✅ Zsh plugins installed"
+        
+    - name: Verify essential tools
+      run: |
+        which git
+        which docker
+        which docker-compose
+        which gh
+        which aws
+        which zoxide
+        which starship
+        which eza
+        which fnm
+        which pnpm
+        which bun
+        echo "✅ All essential tools verified"
+        
+    - name: Verify .zshrc setup
+      run: |
+        test -f "$HOME/.zshrc"
+        echo "✅ .zshrc file exists"
+        
+    - name: Verify Docker networks
+      run: |
+        docker network ls | grep traefik
+        docker network ls | grep haproxy
+        echo "✅ Docker networks created"
+        
+    - name: Verify directories created
+      run: |
+        test -d "$HOME/.local/bin"
+        test -d "$HOME/.local/share"
+        test -d "$HOME/.docker/completions"
+        test -d "$HOME/.eza/completions/zsh"
+        echo "✅ Required directories created"
+        
+    - name: Verify placeholder files
+      run: |
+        test -f "$HOME/.env"
+        test -f "$HOME/.bash_aliases"
+        test -f "$HOME/.fnm.sh"
+        test -f "$HOME/.functions.sh"
+        echo "✅ Placeholder files created"
+        
+    - name: Verify FZF installation
+      run: |
+        test -d "$HOME/.local/share/fzf"
+        test -f "$HOME/.local/share/fzf/bin/fzf"
+        echo "✅ FZF installed"
+        
+    - name: Test zsh configuration loading
+      run: |
+        # Test that zshrc loads without errors
+        zsh -c "source $HOME/.zshrc && echo 'ZSH config loaded successfully'"
+        
+    - name: Test traefik docker-compose syntax
+      run: |
+        cd traefik
+        docker-compose config
+        echo "✅ Docker Compose configuration is valid"
+        
+    - name: Generate installation report
+      run: |
+        echo "## Installation Test Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### ✅ Successfully Installed Tools:" >> $GITHUB_STEP_SUMMARY
+        echo "- Homebrew: $(brew --version | head -1)" >> $GITHUB_STEP_SUMMARY
+        echo "- Git: $(git --version)" >> $GITHUB_STEP_SUMMARY
+        echo "- Docker: $(docker --version)" >> $GITHUB_STEP_SUMMARY
+        echo "- Docker Compose: $(docker-compose --version)" >> $GITHUB_STEP_SUMMARY
+        echo "- GitHub CLI: $(gh --version | head -1)" >> $GITHUB_STEP_SUMMARY
+        echo "- AWS CLI: $(aws --version)" >> $GITHUB_STEP_SUMMARY
+        echo "- Node.js (via fnm): $(fnm current 2>/dev/null || echo 'Not set')" >> $GITHUB_STEP_SUMMARY
+        echo "- Bun: $(bun --version)" >> $GITHUB_STEP_SUMMARY
+        echo "- Starship: $(starship --version)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📁 Verified Directory Structure:" >> $GITHUB_STEP_SUMMARY
+        echo "- ~/.oh-my-zsh" >> $GITHUB_STEP_SUMMARY
+        echo "- ~/.local/bin" >> $GITHUB_STEP_SUMMARY
+        echo "- ~/.local/share/fzf" >> $GITHUB_STEP_SUMMARY
+        echo "- ~/.docker/completions" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🐳 Docker Networks:" >> $GITHUB_STEP_SUMMARY
+        docker network ls --format "table {{.Name}}\t{{.Driver}}" | grep -E "(traefik|haproxy)" >> $GITHUB_STEP_SUMMARY || true
