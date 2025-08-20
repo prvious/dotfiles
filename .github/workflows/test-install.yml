@@ -50,18 +50,44 @@ jobs:
         
     - name: Verify essential tools
       run: |
-        which git
-        which docker
-        which docker-compose
-        which gh
-        which aws
-        which zoxide
-        which starship
-        which eza
-        which fnm
-        which pnpm
-        which bun
-        echo "✅ All essential tools verified"
+        echo "🔍 Verifying essential tools installation..."
+        
+        tools=(
+          "git:Git version control"
+          "docker:Docker containerization"
+          "docker-compose:Docker Compose"
+          "gh:GitHub CLI"
+          "aws:AWS CLI"
+          "zoxide:Smart cd command"
+          "starship:Cross-shell prompt"
+          "eza:Modern ls replacement"
+          "fnm:Fast Node Manager"
+          "pnpm:Package manager"
+          "bun:JavaScript runtime"
+        )
+        
+        all_found=true
+        
+        for tool_info in "${tools[@]}"; do
+          tool="${tool_info%%:*}"
+          description="${tool_info##*:}"
+          
+          if command -v "$tool" >/dev/null 2>&1; then
+            echo "✅ $tool ($description) - $(which $tool)"
+          else
+            echo "❌ $tool ($description) - NOT FOUND"
+            all_found=false
+          fi
+        done
+        
+        if [ "$all_found" = true ]; then
+          echo ""
+          echo "🎉 All essential tools verified successfully!"
+        else
+          echo ""
+          echo "⚠️  Some tools are missing. Installation may have failed."
+          exit 1
+        fi
         
     - name: Verify .zshrc setup
       run: |
