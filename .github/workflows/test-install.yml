@@ -92,6 +92,7 @@ jobs:
         tools=(
           "git:Git version control"
           "docker:Docker containerization"
+          "docker-compose:Docker Compose"
           "gh:GitHub CLI"
           "aws:AWS CLI"
           "zoxide:Smart cd command"
@@ -130,22 +131,85 @@ jobs:
         test -f "$HOME/.zshrc"
         echo "✅ .zshrc file exists"
         
-    - name: Verify Docker installation and networks
+    - name: Verify Docker installation and features
       run: |
-        echo "🐳 Verifying Docker installation..."
+        echo "🐳 Verifying Docker installation and features..."
         
         # Update PATH to include Docker binaries
-        export PATH="/usr/local/bin:$PATH"
+        export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
         
         # Verify Docker CLI is available
         if command -v docker >/dev/null 2>&1; then
           echo "✅ Docker CLI found at: $(which docker)"
           docker --version
+          
+          # Test Docker Buildx
+          if docker buildx version >/dev/null 2>&1; then
+            echo "✅ Docker Buildx available: $(docker buildx version)"
+          else
+            echo "⚠️  Docker Buildx not available"
+          fi
+          
+          # Test Docker Compose
+          if command -v docker-compose >/dev/null 2>&1; then
+            echo "✅ Docker Compose (standalone) found: $(docker-compose --version)"
+          else
+            echo "ℹ️  Standalone docker-compose not found, checking built-in..."
+          fi
+          
+          if docker compose version >/dev/null 2>&1; then
+            echo "✅ Docker Compose (built-in) available: $(docker compose version)"
+          else
+            echo "⚠️  Docker Compose not available"
+          fi
         else
           echo "❌ Docker CLI not found in PATH"
           echo "PATH: $PATH"
-          ls -la /usr/local/bin/docker* || echo "No docker binaries in /usr/local/bin"
+          ls -la /usr/local/bin/docker* /opt/homebrew/bin/docker* 2>/dev/null || echo "No docker binaries found"
           exit 1
+        fi
+        
+        # Start Docker Desktop if available
+        if [ -d "/Applications/Docker.app" ]; then
+          echo "🚀 Starting Docker Desktop..."
+          open -a Docker --background
+          
+          # Quick check if Docker daemon becomes available
+          echo "⏳ Waiting for Docker daemon (30 second timeout)..."
+          timeout=30
+          while ! docker info >/dev/null 2>&1 && [ $timeout -gt 0 ]; do
+            sleep 2
+            timeout=$((timeout - 2))
+            echo "  Waiting... ($timeout seconds remaining)"
+          done
+          
+          if docker info >/dev/null 2>&1; then
+            echo "✅ Docker daemon is running!"
+            
+            # Test buildx with daemon running
+            if docker buildx ls >/dev/null 2>&1; then
+              echo "✅ Docker Buildx working with daemon"
+            fi
+            
+            # Test network creation (the install script should have created these)
+            echo "🔍 Checking for Docker networks..."
+            if docker network ls | grep -q traefik; then
+              echo "✅ Traefik network exists"
+            else
+              echo "ℹ️  Traefik network not found (will be created on first run)"
+            fi
+            
+            if docker network ls | grep -q haproxy; then
+              echo "✅ HAProxy network exists"
+            else
+              echo "ℹ️  HAProxy network not found (will be created on first run)"
+            fi
+          else
+            echo "ℹ️  Docker daemon not ready within 30 seconds (expected in CI)"
+            echo "✅ Docker Desktop installed successfully, CLI tools available"
+          fi
+        else
+          echo "ℹ️  Docker Desktop app not found at /Applications/Docker.app"
         fi
         
         if docker info >/dev/null 2>&1; then
@@ -228,6 +292,8 @@ jobs:
         echo "- Homebrew: $(brew --version | head -1)" >> $GITHUB_STEP_SUMMARY
         echo "- Git: $(git --version)" >> $GITHUB_STEP_SUMMARY
         echo "- Docker: $(docker --version)" >> $GITHUB_STEP_SUMMARY
+        echo "- Docker Compose: $(docker-compose --version 2>/dev/null || docker compose version 2>/dev/null || echo 'Not available')" >> $GITHUB_STEP_SUMMARY
+        echo "- Docker Buildx: $(docker buildx version 2>/dev/null || echo 'Not available')" >> $GITHUB_STEP_SUMMARY
         echo "- GitHub CLI: $(gh --version | head -1)" >> $GITHUB_STEP_SUMMARY
         echo "- AWS CLI: $(aws --version)" >> $GITHUB_STEP_SUMMARY
         echo "- Node.js (via fnm): $(fnm current 2>/dev/null || echo 'Not set')" >> $GITHUB_STEP_SUMMARY
