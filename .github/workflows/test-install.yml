@@ -1,322 +1,322 @@
 name: Test Installation Script
 
 on:
-  push:
-    branches: [ main, master ]
-    paths:
-      - 'install.sh'
-      - '.zshrc'
-      - '.github/workflows/test-install.yml'
-  pull_request:
-    branches: [ main, master ]
-    paths:
-      - 'install.sh'
-      - '.zshrc'
-      - '.github/workflows/test-install.yml'
-  workflow_dispatch:
+    push:
+        branches: [main, master]
+        paths:
+            - "install.sh"
+            - ".zshrc"
+            - ".github/workflows/test-install.yml"
+    pull_request:
+        branches: [main, master]
+        paths:
+            - "install.sh"
+            - ".zshrc"
+            - ".github/workflows/test-install.yml"
+    workflow_dispatch:
 
 jobs:
-  test-install:
-    runs-on: macos-latest
-    
-    env:
-      HOMEBREW_NO_AUTO_UPDATE: "1"
-      HOMEBREW_NO_INSTALL_CLEANUP: "1"
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Cache Homebrew packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/Library/Caches/Homebrew
-          /opt/homebrew/Cellar
-          /opt/homebrew/Caskroom
-        key: ${{ runner.os }}-homebrew-${{ hashFiles('install.sh') }}
-        restore-keys: |
-          ${{ runner.os }}-homebrew-
-          
-    - name: Cache Oh My Zsh and plugins
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.oh-my-zsh
-        key: ${{ runner.os }}-oh-my-zsh-${{ hashFiles('.zshrc') }}
-        restore-keys: |
-          ${{ runner.os }}-oh-my-zsh-
-          
-    - name: Cache Node.js tools
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.bun
-          ~/.local/share/fnm
-        key: ${{ runner.os }}-node-tools-v1
-        restore-keys: |
-          ${{ runner.os }}-node-tools-
-      
-    - name: Make install script executable
-      run: chmod +x install.sh
-      
-    - name: Verify script syntax
-      run: bash -n install.sh
-      
-    - name: Run install script
-      run: ./install.sh
-      
-    - name: Verify Homebrew installation
-      run: |
-        which brew
-        brew --version
-        
-    - name: Verify Oh My Zsh installation
-      run: |
-        test -d "$HOME/.oh-my-zsh"
-        echo "✅ Oh My Zsh installed"
-        
-    - name: Verify zsh plugins installation
-      run: |
-        test -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
-        test -d "$HOME/.oh-my-zsh/custom/plugins/fzf-tab"
-        echo "✅ Zsh plugins installed"
-        
-    - name: Verify essential tools
-      run: |
-        echo "🔍 Verifying essential tools installation..."
-        
-        # Update PATH to include Bun installation directory
-        export PATH="$HOME/.bun/bin:$PATH"
-        
-        tools=(
-          "git:Git version control"
-          "docker:Docker containerization"
-          "docker-compose:Docker Compose"
-          "gh:GitHub CLI"
-          "aws:AWS CLI"
-          "zoxide:Smart cd command"
-          "starship:Cross-shell prompt"
-          "eza:Modern ls replacement"
-          "fnm:Fast Node Manager"
-          "pnpm:Package manager"
-          "bun:JavaScript runtime"
-        )
-        
-        all_found=true
-        
-        for tool_info in "${tools[@]}"; do
-          tool="${tool_info%%:*}"
-          description="${tool_info##*:}"
-          
-          if command -v "$tool" >/dev/null 2>&1; then
-            echo "✅ $tool ($description) - $(which $tool)"
-          else
-            echo "❌ $tool ($description) - NOT FOUND"
-            all_found=false
-          fi
-        done
-        
-        if [ "$all_found" = true ]; then
-          echo ""
-          echo "🎉 All essential tools verified successfully!"
-        else
-          echo ""
-          echo "⚠️  Some tools are missing. Installation may have failed."
-          exit 1
-        fi
-        
-    - name: Verify .zshrc setup
-      run: |
-        test -f "$HOME/.zshrc"
-        echo "✅ .zshrc file exists"
-        
-    - name: Verify Docker installation and features
-      run: |
-        echo "🐳 Verifying Docker installation and features..."
-        
-        # Update PATH to include Docker binaries
-        export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
-        
-        # Verify Docker CLI is available
-        if command -v docker >/dev/null 2>&1; then
-          echo "✅ Docker CLI found at: $(which docker)"
-          docker --version
-          
-          # Test Docker Buildx
-          if docker buildx version >/dev/null 2>&1; then
-            echo "✅ Docker Buildx available: $(docker buildx version)"
-          else
-            echo "⚠️  Docker Buildx not available"
-          fi
-          
-          # Test Docker Compose
-          if command -v docker-compose >/dev/null 2>&1; then
-            echo "✅ Docker Compose (standalone) found: $(docker-compose --version)"
-          else
-            echo "ℹ️  Standalone docker-compose not found, checking built-in..."
-          fi
-          
-          if docker compose version >/dev/null 2>&1; then
-            echo "✅ Docker Compose (built-in) available: $(docker compose version)"
-          else
-            echo "⚠️  Docker Compose not available"
-          fi
-        else
-          echo "❌ Docker CLI not found in PATH"
-          echo "PATH: $PATH"
-          ls -la /usr/local/bin/docker* /opt/homebrew/bin/docker* 2>/dev/null || echo "No docker binaries found"
-          exit 1
-        fi
-        
-        # Start Docker Desktop if available
-        if [ -d "/Applications/Docker.app" ]; then
-          echo "🚀 Starting Docker Desktop..."
-          open -a Docker --background
-          
-          # Quick check if Docker daemon becomes available
-          echo "⏳ Waiting for Docker daemon (30 second timeout)..."
-          timeout=30
-          while ! docker info >/dev/null 2>&1 && [ $timeout -gt 0 ]; do
-            sleep 2
-            timeout=$((timeout - 2))
-            echo "  Waiting... ($timeout seconds remaining)"
-          done
-          
-          if docker info >/dev/null 2>&1; then
-            echo "✅ Docker daemon is running!"
-            
-            # Test buildx with daemon running
-            if docker buildx ls >/dev/null 2>&1; then
-              echo "✅ Docker Buildx working with daemon"
-            fi
-            
-            # Test network creation (the install script should have created these)
-            echo "🔍 Checking for Docker networks..."
-            if docker network ls | grep -q traefik; then
-              echo "✅ Traefik network exists"
-            else
-              echo "ℹ️  Traefik network not found (will be created on first run)"
-            fi
-            
-            if docker network ls | grep -q haproxy; then
-              echo "✅ HAProxy network exists"
-            else
-              echo "ℹ️  HAProxy network not found (will be created on first run)"
-            fi
-          else
-            echo "ℹ️  Docker daemon not ready within 30 seconds (expected in CI)"
-            echo "✅ Docker Desktop installed successfully, CLI tools available"
-          fi
-        else
-          echo "ℹ️  Docker Desktop app not found at /Applications/Docker.app"
-        fi
-        
-        if docker info >/dev/null 2>&1; then
-          echo "✅ Docker daemon is running!"
-          
-          # Test network creation (the install script should have created these)
-          echo "🔍 Checking for Docker networks..."
-          if docker network ls | grep -q traefik; then
-            echo "✅ Traefik network exists"
-          else
-            echo "ℹ️  Traefik network not found (will be created on first run)"
-          fi
-          
-          if docker network ls | grep -q haproxy; then
-            echo "✅ HAProxy network exists"
-          else
-            echo "ℹ️  HAProxy network not found (will be created on first run)"
-          fi
-        else
-          echo "ℹ️  Docker daemon not ready within 30 seconds (expected in CI)"
-          echo "✅ Docker Desktop installed successfully, CLI tools available"
-        fi
-        
-    - name: Verify directories created
-      run: |
-        test -d "$HOME/.local/bin"
-        test -d "$HOME/.local/share"
-        test -d "$HOME/.docker/completions"
-        test -d "$HOME/.eza/completions/zsh"
-        echo "✅ Required directories created"
-        
-    - name: Verify placeholder files
-      run: |
-        test -f "$HOME/.env"
-        test -f "$HOME/.bash_aliases"
-        test -f "$HOME/.fnm.sh"
-        test -f "$HOME/.functions.sh"
-        echo "✅ Placeholder files created"
-        
-    - name: Verify FZF installation
-      run: |
-        test -d "$HOME/.local/share/fzf"
-        test -f "$HOME/.local/share/fzf/bin/fzf"
-        echo "✅ FZF installed"
-        
-    - name: Test zsh configuration loading
-      run: |
-        # Test that zshrc loads without errors
-        zsh -c "source $HOME/.zshrc && echo 'ZSH config loaded successfully'"
-        
-     - name: Test traefik docker-compose syntax
-       run: |
-         cd traefik
-         
-         # Try modern docker compose first, then legacy docker-compose
-         if command -v docker >/dev/null 2>&1; then
-           if docker compose version >/dev/null 2>&1; then
-             echo "🐳 Using Docker Compose V2..."
-             docker compose config
-             echo "✅ Docker Compose configuration is valid"
-           elif command -v docker-compose >/dev/null 2>&1; then
-             echo "🐳 Using Docker Compose V1..."
-             docker-compose config
-             echo "✅ Docker Compose configuration is valid"
-           else
-             echo "ℹ️  Docker Compose not available in PATH"
-             echo "   Configuration syntax will be validated when Docker daemon is running"
-             echo "✅ Skipped Docker Compose validation (Docker not ready)"
-           fi
-         else
-           echo "ℹ️  Docker CLI not available"
-           echo "✅ Skipped Docker Compose validation"
-         fi
-        
-    - name: Generate installation report
-      run: |
-        echo "## Installation Test Report" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### ✅ Successfully Installed Tools:" >> $GITHUB_STEP_SUMMARY
-        echo "- Homebrew: $(brew --version | head -1)" >> $GITHUB_STEP_SUMMARY
-        echo "- Git: $(git --version)" >> $GITHUB_STEP_SUMMARY
-        echo "- Docker: $(docker --version)" >> $GITHUB_STEP_SUMMARY
-        echo "- Docker Compose: $(docker-compose --version 2>/dev/null || docker compose version 2>/dev/null || echo 'Not available')" >> $GITHUB_STEP_SUMMARY
-        echo "- Docker Buildx: $(docker buildx version 2>/dev/null || echo 'Not available')" >> $GITHUB_STEP_SUMMARY
-        echo "- GitHub CLI: $(gh --version | head -1)" >> $GITHUB_STEP_SUMMARY
-        echo "- AWS CLI: $(aws --version)" >> $GITHUB_STEP_SUMMARY
-        echo "- Node.js (via fnm): $(fnm current 2>/dev/null || echo 'Not set')" >> $GITHUB_STEP_SUMMARY
-        echo "- Bun: $(bun --version)" >> $GITHUB_STEP_SUMMARY
-        echo "- Starship: $(starship --version)" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📁 Verified Directory Structure:" >> $GITHUB_STEP_SUMMARY
-        echo "- ~/.oh-my-zsh" >> $GITHUB_STEP_SUMMARY
-        echo "- ~/.local/bin" >> $GITHUB_STEP_SUMMARY
-        echo "- ~/.local/share/fzf" >> $GITHUB_STEP_SUMMARY
-        echo "- ~/.docker/completions" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🐳 Docker Status:" >> $GITHUB_STEP_SUMMARY
-        if docker info >/dev/null 2>&1; then
-          echo "- Docker Desktop: Running" >> $GITHUB_STEP_SUMMARY
-          echo "- Networks: traefik, haproxy created" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "- Docker Desktop: Installed but not running in CI" >> $GITHUB_STEP_SUMMARY
-          echo "- CLI tools: Available" >> $GITHUB_STEP_SUMMARY
-        fi
-        
-    - name: Cleanup Homebrew cache
-      run: |
-        echo "🧹 Cleaning up Homebrew cache for next run..."
-        brew cleanup --prune=0
-        echo "✅ Cache cleanup complete"
+    test-install:
+        runs-on: macos-latest
+
+        env:
+            HOMEBREW_NO_AUTO_UPDATE: 1
+            HOMEBREW_NO_INSTALL_CLEANUP: 1
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Cache Homebrew packages
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/Library/Caches/Homebrew
+                      /opt/homebrew/Cellar
+                      /opt/homebrew/Caskroom
+                  key: ${{ runner.os }}-homebrew-${{ hashFiles('install.sh') }}
+                  restore-keys: |
+                      ${{ runner.os }}-homebrew-
+
+            - name: Cache Oh My Zsh and plugins
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/.oh-my-zsh
+                  key: ${{ runner.os }}-oh-my-zsh-${{ hashFiles('.zshrc') }}
+                  restore-keys: |
+                      ${{ runner.os }}-oh-my-zsh-
+
+            - name: Cache Node.js tools
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/.bun
+                      ~/.local/share/fnm
+                  key: ${{ runner.os }}-node-tools-v1
+                  restore-keys: |
+                      ${{ runner.os }}-node-tools-
+
+            - name: Make install script executable
+              run: chmod +x install.sh
+
+            - name: Verify script syntax
+              run: bash -n install.sh
+
+            - name: Run install script
+              run: ./install.sh
+
+            - name: Verify Homebrew installation
+              run: |
+                  which brew
+                  brew --version
+
+            - name: Verify Oh My Zsh installation
+              run: |
+                  test -d "$HOME/.oh-my-zsh"
+                  echo "✅ Oh My Zsh installed"
+
+            - name: Verify zsh plugins installation
+              run: |
+                  test -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+                  test -d "$HOME/.oh-my-zsh/custom/plugins/fzf-tab"
+                  echo "✅ Zsh plugins installed"
+
+            - name: Verify essential tools
+              run: |
+                  echo "🔍 Verifying essential tools installation..."
+
+                  # Update PATH to include Bun installation directory
+                  export PATH="$HOME/.bun/bin:$PATH"
+
+                  tools=(
+                    "git:Git version control"
+                    "docker:Docker containerization"
+                    "docker-compose:Docker Compose"
+                    "gh:GitHub CLI"
+                    "aws:AWS CLI"
+                    "zoxide:Smart cd command"
+                    "starship:Cross-shell prompt"
+                    "eza:Modern ls replacement"
+                    "fnm:Fast Node Manager"
+                    "pnpm:Package manager"
+                    "bun:JavaScript runtime"
+                  )
+
+                  all_found=true
+
+                  for tool_info in "${tools[@]}"; do
+                    tool="${tool_info%%:*}"
+                    description="${tool_info##*:}"
+                    
+                    if command -v "$tool" >/dev/null 2>&1; then
+                      echo "✅ $tool ($description) - $(which $tool)"
+                    else
+                      echo "❌ $tool ($description) - NOT FOUND"
+                      all_found=false
+                    fi
+                  done
+
+                  if [ "$all_found" = true ]; then
+                    echo ""
+                    echo "🎉 All essential tools verified successfully!"
+                  else
+                    echo ""
+                    echo "⚠️  Some tools are missing. Installation may have failed."
+                    exit 1
+                  fi
+
+            - name: Verify .zshrc setup
+              run: |
+                  test -f "$HOME/.zshrc"
+                  echo "✅ .zshrc file exists"
+
+            - name: Verify Docker installation and features
+              run: |
+                  echo "🐳 Verifying Docker installation and features..."
+
+                  # Update PATH to include Docker binaries
+                  export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+
+                  # Verify Docker CLI is available
+                  if command -v docker >/dev/null 2>&1; then
+                    echo "✅ Docker CLI found at: $(which docker)"
+                    docker --version
+                    
+                    # Test Docker Buildx
+                    if docker buildx version >/dev/null 2>&1; then
+                      echo "✅ Docker Buildx available: $(docker buildx version)"
+                    else
+                      echo "⚠️  Docker Buildx not available"
+                    fi
+                    
+                    # Test Docker Compose
+                    if command -v docker-compose >/dev/null 2>&1; then
+                      echo "✅ Docker Compose (standalone) found: $(docker-compose --version)"
+                    else
+                      echo "ℹ️  Standalone docker-compose not found, checking built-in..."
+                    fi
+                    
+                    if docker compose version >/dev/null 2>&1; then
+                      echo "✅ Docker Compose (built-in) available: $(docker compose version)"
+                    else
+                      echo "⚠️  Docker Compose not available"
+                    fi
+                  else
+                    echo "❌ Docker CLI not found in PATH"
+                    echo "PATH: $PATH"
+                    ls -la /usr/local/bin/docker* /opt/homebrew/bin/docker* 2>/dev/null || echo "No docker binaries found"
+                    exit 1
+                  fi
+
+                  # Start Docker Desktop if available
+                  if [ -d "/Applications/Docker.app" ]; then
+                    echo "🚀 Starting Docker Desktop..."
+                    open -a Docker --background
+                    
+                    # Quick check if Docker daemon becomes available
+                    echo "⏳ Waiting for Docker daemon (30 second timeout)..."
+                    timeout=30
+                    while ! docker info >/dev/null 2>&1 && [ $timeout -gt 0 ]; do
+                      sleep 2
+                      timeout=$((timeout - 2))
+                      echo "  Waiting... ($timeout seconds remaining)"
+                    done
+                    
+                    if docker info >/dev/null 2>&1; then
+                      echo "✅ Docker daemon is running!"
+                      
+                      # Test buildx with daemon running
+                      if docker buildx ls >/dev/null 2>&1; then
+                        echo "✅ Docker Buildx working with daemon"
+                      fi
+                      
+                      # Test network creation (the install script should have created these)
+                      echo "🔍 Checking for Docker networks..."
+                      if docker network ls | grep -q traefik; then
+                        echo "✅ Traefik network exists"
+                      else
+                        echo "ℹ️  Traefik network not found (will be created on first run)"
+                      fi
+                      
+                      if docker network ls | grep -q haproxy; then
+                        echo "✅ HAProxy network exists"
+                      else
+                        echo "ℹ️  HAProxy network not found (will be created on first run)"
+                      fi
+                    else
+                      echo "ℹ️  Docker daemon not ready within 30 seconds (expected in CI)"
+                      echo "✅ Docker Desktop installed successfully, CLI tools available"
+                    fi
+                  else
+                    echo "ℹ️  Docker Desktop app not found at /Applications/Docker.app"
+                  fi
+
+                  if docker info >/dev/null 2>&1; then
+                    echo "✅ Docker daemon is running!"
+                    
+                    # Test network creation (the install script should have created these)
+                    echo "🔍 Checking for Docker networks..."
+                    if docker network ls | grep -q traefik; then
+                      echo "✅ Traefik network exists"
+                    else
+                      echo "ℹ️  Traefik network not found (will be created on first run)"
+                    fi
+                    
+                    if docker network ls | grep -q haproxy; then
+                      echo "✅ HAProxy network exists"
+                    else
+                      echo "ℹ️  HAProxy network not found (will be created on first run)"
+                    fi
+                  else
+                    echo "ℹ️  Docker daemon not ready within 30 seconds (expected in CI)"
+                    echo "✅ Docker Desktop installed successfully, CLI tools available"
+                  fi
+
+            - name: Verify directories created
+              run: |
+                  test -d "$HOME/.local/bin"
+                  test -d "$HOME/.local/share"
+                  test -d "$HOME/.docker/completions"
+                  test -d "$HOME/.eza/completions/zsh"
+                  echo "✅ Required directories created"
+
+            - name: Verify placeholder files
+              run: |
+                  test -f "$HOME/.env"
+                  test -f "$HOME/.bash_aliases"
+                  test -f "$HOME/.fnm.sh"
+                  test -f "$HOME/.functions.sh"
+                  echo "✅ Placeholder files created"
+
+            - name: Verify FZF installation
+              run: |
+                  test -d "$HOME/.local/share/fzf"
+                  test -f "$HOME/.local/share/fzf/bin/fzf"
+                  echo "✅ FZF installed"
+
+            - name: Test zsh configuration loading
+              run: |
+                  # Test that zshrc loads without errors
+                  zsh -c "source $HOME/.zshrc && echo 'ZSH config loaded successfully'"
+
+            - name: Test traefik docker-compose syntax
+              run: |
+                  cd traefik
+
+                  # Try modern docker compose first, then legacy docker-compose
+                  if command -v docker >/dev/null 2>&1; then
+                    if docker compose version >/dev/null 2>&1; then
+                      echo "🐳 Using Docker Compose V2..."
+                      docker compose config
+                      echo "✅ Docker Compose configuration is valid"
+                    elif command -v docker-compose >/dev/null 2>&1; then
+                      echo "🐳 Using Docker Compose V1..."
+                      docker-compose config
+                      echo "✅ Docker Compose configuration is valid"
+                    else
+                      echo "ℹ️  Docker Compose not available in PATH"
+                      echo "   Configuration syntax will be validated when Docker daemon is running"
+                      echo "✅ Skipped Docker Compose validation (Docker not ready)"
+                    fi
+                  else
+                    echo "ℹ️  Docker CLI not available"
+                    echo "✅ Skipped Docker Compose validation"
+                  fi
+
+            - name: Generate installation report
+              run: |
+                  echo "## Installation Test Report" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "### ✅ Successfully Installed Tools:" >> $GITHUB_STEP_SUMMARY
+                  echo "- Homebrew: $(brew --version | head -1)" >> $GITHUB_STEP_SUMMARY
+                  echo "- Git: $(git --version)" >> $GITHUB_STEP_SUMMARY
+                  echo "- Docker: $(docker --version)" >> $GITHUB_STEP_SUMMARY
+                  echo "- Docker Compose: $(docker-compose --version 2>/dev/null || docker compose version 2>/dev/null || echo 'Not available')" >> $GITHUB_STEP_SUMMARY
+                  echo "- Docker Buildx: $(docker buildx version 2>/dev/null || echo 'Not available')" >> $GITHUB_STEP_SUMMARY
+                  echo "- GitHub CLI: $(gh --version | head -1)" >> $GITHUB_STEP_SUMMARY
+                  echo "- AWS CLI: $(aws --version)" >> $GITHUB_STEP_SUMMARY
+                  echo "- Node.js (via fnm): $(fnm current 2>/dev/null || echo 'Not set')" >> $GITHUB_STEP_SUMMARY
+                  echo "- Bun: $(bun --version)" >> $GITHUB_STEP_SUMMARY
+                  echo "- Starship: $(starship --version)" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "### 📁 Verified Directory Structure:" >> $GITHUB_STEP_SUMMARY
+                  echo "- ~/.oh-my-zsh" >> $GITHUB_STEP_SUMMARY
+                  echo "- ~/.local/bin" >> $GITHUB_STEP_SUMMARY
+                  echo "- ~/.local/share/fzf" >> $GITHUB_STEP_SUMMARY
+                  echo "- ~/.docker/completions" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "### 🐳 Docker Status:" >> $GITHUB_STEP_SUMMARY
+                  if docker info >/dev/null 2>&1; then
+                    echo "- Docker Desktop: Running" >> $GITHUB_STEP_SUMMARY
+                    echo "- Networks: traefik, haproxy created" >> $GITHUB_STEP_SUMMARY
+                  else
+                    echo "- Docker Desktop: Installed but not running in CI" >> $GITHUB_STEP_SUMMARY
+                    echo "- CLI tools: Available" >> $GITHUB_STEP_SUMMARY
+                  fi
+
+            - name: Cleanup Homebrew cache
+              run: |
+                  echo "🧹 Cleaning up Homebrew cache for next run..."
+                  brew cleanup --prune=0
+                  echo "✅ Cache cleanup complete"
