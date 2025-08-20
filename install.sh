@@ -86,7 +86,6 @@ main() {
         "fnm"          # Fast Node Manager
         "pnpm"         # Package manager
         "mysql-client" # MySQL client
-        "cargo"        # Rust package manager
         "composer"     # PHP package manager
         "fzf"          # Fuzzy finder
     )
@@ -135,9 +134,39 @@ main() {
         echo "✅ Copied .zshrc to home directory"
     fi
     
-    # Create placeholder files referenced in .zshrc
-    touch "$HOME/.env" 2>/dev/null || true
-    touch "$HOME/.bash_aliases" 2>/dev/null || true
+    # Create .env file with placeholder content
+    if [ ! -f "$HOME/.env" ]; then
+        echo "📝 Creating .env file..."
+        cat > "$HOME/.env" << 'ENV_EOF'
+# Environment variables
+# Add your environment variables here
+# Example: export DATABASE_URL="your-database-url"
+ENV_EOF
+    fi
+    
+    # Create bash aliases file with useful aliases
+    echo "📝 Setting up bash aliases..."
+    cat > "$HOME/.bash_aliases" << 'ALIAS_EOF'
+# PHP/Laravel aliases
+alias pa='php artisan'
+alias pest='./vendor/bin/pest'
+alias phpstan='./vendor/bin/phpstan'
+alias stan='./vendor/bin/stan'
+alias rector='./vendor/bin/rector'
+alias pint='./vendor/bin/pint'
+
+# Laravel migration aliases
+alias amfs='php artisan migration:refresh --seed'
+alias amf='php artisan migrate --force'
+alias am='php artisan migrate'
+
+# General aliases
+alias apps="cd ~/Apps"
+alias dc="docker-compose"
+alias devcode="devcontainerx open-in-code"
+ALIAS_EOF
+    
+    # Create placeholder function and fnm files
     touch "$HOME/.fnm.sh" 2>/dev/null || true
     touch "$HOME/.functions.sh" 2>/dev/null || true
     

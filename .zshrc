@@ -3,7 +3,7 @@ export PNPM_HOME="$HOME/Library/pnpm"
 export ZSH="$HOME/.oh-my-zsh"
 FZF_HOME="${HOME}/.local/share/fzf"
 
-export PATH="$HOME/bin:$HOME/.local/bin:/usr/local/bin:$FZF_HOME/bin:$HOME/.composer/vendor/bin:$HOME/.cargo/bin:$PNPM_HOME:$PATH"
+export PATH="$HOME/bin:$HOME/.local/bin:/usr/local/bin:$FZF_HOME/bin:$HOME/.composer/vendor/bin:$PNPM_HOME:$PATH"
 
 
 # Download fzf, if it's not there yet
