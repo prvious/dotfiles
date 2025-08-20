@@ -58,7 +58,6 @@ jobs:
         tools=(
           "git:Git version control"
           "docker:Docker containerization"
-          "docker-compose:Docker Compose"
           "gh:GitHub CLI"
           "aws:AWS CLI"
           "zoxide:Smart cd command"
@@ -97,13 +96,54 @@ jobs:
         test -f "$HOME/.zshrc"
         echo "✅ .zshrc file exists"
         
-    - name: Verify Docker networks (skip - requires Docker Desktop)
+    - name: Start Docker Desktop and verify networks
       run: |
-        echo "ℹ️  Skipping Docker network verification"
-        echo "   Docker Desktop is not pre-installed on GitHub Actions runners"
-        echo "   Docker and docker-compose tools are verified, but daemon is not running"
-        echo "   In real usage, Docker networks will be created when Docker is running"
-        echo "✅ Docker network creation logic verified (skipped actual creation)"
+        echo "🐳 Starting Docker Desktop..."
+        open -a Docker --background
+        
+        # Wait for Docker to be ready
+        echo "⏳ Waiting for Docker to start..."
+        timeout=120
+        while ! docker info >/dev/null 2>&1 && [ $timeout -gt 0 ]; do
+          sleep 3
+          timeout=$((timeout - 3))
+          echo "  Waiting... ($timeout seconds remaining)"
+        done
+        
+        if docker info >/dev/null 2>&1; then
+          echo "✅ Docker is running"
+          docker --version
+          
+          # Verify Docker networks were created
+          echo "🔍 Checking Docker networks..."
+          if docker network ls | grep -q traefik; then
+            echo "✅ Traefik network found"
+          else
+            echo "❌ Traefik network not found"
+            exit 1
+          fi
+          
+          if docker network ls | grep -q haproxy; then
+            echo "✅ HAProxy network found"  
+          else
+            echo "❌ HAProxy network not found"
+            exit 1
+          fi
+          
+          echo "✅ Docker networks verified"
+        else
+          echo "❌ Docker failed to start within timeout"
+          echo "ℹ️  This might be expected in CI environment"
+          echo "ℹ️  Checking if Docker CLI tools are available..."
+          
+          if command -v docker >/dev/null 2>&1; then
+            echo "✅ Docker CLI tools are installed"
+            docker --version
+          else
+            echo "❌ Docker CLI tools not found"
+            exit 1
+          fi
+        fi
         
     - name: Verify directories created
       run: |
@@ -146,7 +186,6 @@ jobs:
         echo "- Homebrew: $(brew --version | head -1)" >> $GITHUB_STEP_SUMMARY
         echo "- Git: $(git --version)" >> $GITHUB_STEP_SUMMARY
         echo "- Docker: $(docker --version)" >> $GITHUB_STEP_SUMMARY
-        echo "- Docker Compose: $(docker-compose --version)" >> $GITHUB_STEP_SUMMARY
         echo "- GitHub CLI: $(gh --version | head -1)" >> $GITHUB_STEP_SUMMARY
         echo "- AWS CLI: $(aws --version)" >> $GITHUB_STEP_SUMMARY
         echo "- Node.js (via fnm): $(fnm current 2>/dev/null || echo 'Not set')" >> $GITHUB_STEP_SUMMARY
@@ -160,6 +199,10 @@ jobs:
         echo "- ~/.docker/completions" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 🐳 Docker Status:" >> $GITHUB_STEP_SUMMARY
-        echo "- Docker CLI tools installed and verified" >> $GITHUB_STEP_SUMMARY
-        echo "- Docker networks will be created when Docker daemon is running" >> $GITHUB_STEP_SUMMARY
-        echo "- (Docker Desktop not available in CI environment)" >> $GITHUB_STEP_SUMMARY
+        if docker info >/dev/null 2>&1; then
+          echo "- Docker Desktop: Running" >> $GITHUB_STEP_SUMMARY
+          echo "- Networks: traefik, haproxy created" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- Docker Desktop: Installed but not running in CI" >> $GITHUB_STEP_SUMMARY
+          echo "- CLI tools: Available" >> $GITHUB_STEP_SUMMARY
+        fi

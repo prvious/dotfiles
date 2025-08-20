@@ -154,8 +154,6 @@ main() {
     # Core development tools
     brew_packages=(
         "git"
-        "docker"
-        "docker-compose"
         "gh"           # GitHub CLI
         "awscli"       # AWS CLI
         "zoxide"       # Smart cd command
@@ -167,6 +165,14 @@ main() {
         "composer"     # PHP package manager
         "fzf"          # Fuzzy finder
     )
+    
+    # Install Docker Desktop (includes daemon and CLI tools)
+    if ! brew list --cask docker &>/dev/null; then
+        echo "📦 Installing Docker Desktop..."
+        brew install --cask docker
+    else
+        echo "✅ Docker Desktop already installed"
+    fi
     
     for package in "${brew_packages[@]}"; do
         if ! brew list "$package" &>/dev/null; then
