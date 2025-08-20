@@ -2,8 +2,12 @@
 
 # Laptop Setup Script
 # This script sets up a development environment based on the configurations in this repo
+# Usage: curl https://raw.githubusercontent.com/munezaclovis/setup/refs/heads/main/install.sh | bash
 
 set -e  # Exit on any error
+
+REPO_URL="https://github.com/munezaclovis/setup.git"
+TEMP_DIR="/tmp/setup-$$"
 
 echo "🚀 Starting laptop setup..."
 
@@ -16,6 +20,39 @@ fi
 # Function to check if command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
+}
+
+# Function to cleanup temporary directory
+cleanup() {
+    if [ -d "$TEMP_DIR" ]; then
+        echo "🧹 Cleaning up temporary files..."
+        rm -rf "$TEMP_DIR"
+    fi
+}
+
+# Set trap to cleanup on exit
+trap cleanup EXIT
+
+# Function to clone setup repository
+clone_setup_repo() {
+    echo "📥 Downloading setup files..."
+    
+    # Install git first if not present
+    if ! command_exists git; then
+        echo "📦 Installing git..."
+        if command_exists brew; then
+            brew install git
+        else
+            # If Homebrew not available yet, install via Xcode command line tools
+            xcode-select --install 2>/dev/null || true
+            echo "⚠️  Please install Xcode command line tools and re-run this script"
+            exit 1
+        fi
+    fi
+    
+    # Clone the repository to temp directory
+    git clone "$REPO_URL" "$TEMP_DIR"
+    cd "$TEMP_DIR"
 }
 
 # Function to install Homebrew if not present
@@ -59,9 +96,50 @@ install_zsh_plugins() {
     fi
 }
 
+# Function to setup configuration files
+setup_config_files() {
+    echo "📝 Setting up configuration files..."
+    
+    # Backup and copy .zshrc
+    if [ -f "$HOME/.zshrc" ]; then
+        cp "$HOME/.zshrc" "$HOME/.zshrc.backup.$(date +%Y%m%d_%H%M%S)"
+        echo "💾 Backed up existing .zshrc"
+    fi
+    cp "$TEMP_DIR/.zshrc" "$HOME/.zshrc"
+    echo "✅ Copied .zshrc to home directory"
+    
+    # Copy .bash_aliases
+    if [ -f "$TEMP_DIR/.bash_aliases" ]; then
+        if [ -f "$HOME/.bash_aliases" ]; then
+            cp "$HOME/.bash_aliases" "$HOME/.bash_aliases.backup.$(date +%Y%m%d_%H%M%S)"
+            echo "💾 Backed up existing .bash_aliases"
+        fi
+        cp "$TEMP_DIR/.bash_aliases" "$HOME/.bash_aliases"
+        echo "✅ Copied .bash_aliases to home directory"
+    fi
+    
+    # Create placeholder files referenced in .zshrc
+    touch "$HOME/.env" 2>/dev/null || true
+    touch "$HOME/.fnm.sh" 2>/dev/null || true
+    touch "$HOME/.functions.sh" 2>/dev/null || true
+    
+    # Create .env file with placeholder content if it doesn't exist
+    if [ ! -f "$HOME/.env" ] || [ ! -s "$HOME/.env" ]; then
+        echo "📝 Creating .env file..."
+        cat > "$HOME/.env" << 'ENV_EOF'
+# Environment variables
+# Add your environment variables here
+# Example: export DATABASE_URL="your-database-url"
+ENV_EOF
+    fi
+}
+
 # Main installation function
 main() {
     echo "🔧 Installing development tools..."
+    
+    # Clone the setup repository first
+    clone_setup_repo
     
     # Install Homebrew first
     install_homebrew
@@ -123,52 +201,8 @@ main() {
     mkdir -p "$HOME/.docker/completions"
     mkdir -p "$HOME/.eza/completions/zsh"
     
-    # Copy .zshrc if it doesn't exist or ask to replace
-    if [ ! -f "$HOME/.zshrc" ] || [ "$HOME/.zshrc" -ot ".zshrc" ]; then
-        echo "📝 Setting up .zshrc..."
-        if [ -f "$HOME/.zshrc" ]; then
-            cp "$HOME/.zshrc" "$HOME/.zshrc.backup.$(date +%Y%m%d_%H%M%S)"
-            echo "💾 Backed up existing .zshrc"
-        fi
-        cp .zshrc "$HOME/.zshrc"
-        echo "✅ Copied .zshrc to home directory"
-    fi
-    
-    # Create .env file with placeholder content
-    if [ ! -f "$HOME/.env" ]; then
-        echo "📝 Creating .env file..."
-        cat > "$HOME/.env" << 'ENV_EOF'
-# Environment variables
-# Add your environment variables here
-# Example: export DATABASE_URL="your-database-url"
-ENV_EOF
-    fi
-    
-    # Create bash aliases file with useful aliases
-    echo "📝 Setting up bash aliases..."
-    cat > "$HOME/.bash_aliases" << 'ALIAS_EOF'
-# PHP/Laravel aliases
-alias pa='php artisan'
-alias pest='./vendor/bin/pest'
-alias phpstan='./vendor/bin/phpstan'
-alias stan='./vendor/bin/stan'
-alias rector='./vendor/bin/rector'
-alias pint='./vendor/bin/pint'
-
-# Laravel migration aliases
-alias amfs='php artisan migration:refresh --seed'
-alias amf='php artisan migrate --force'
-alias am='php artisan migrate'
-
-# General aliases
-alias apps="cd ~/Apps"
-alias dc="docker-compose"
-alias devcode="devcontainerx open-in-code"
-ALIAS_EOF
-    
-    # Create placeholder function and fnm files
-    touch "$HOME/.fnm.sh" 2>/dev/null || true
-    touch "$HOME/.functions.sh" 2>/dev/null || true
+    # Setup configuration files
+    setup_config_files
     
     # Setup FZF if not already done
     if [ ! -d "$HOME/.local/share/fzf" ]; then
@@ -191,8 +225,10 @@ ALIAS_EOF
     echo "1. Restart your terminal or run: source ~/.zshrc"
     echo "2. Configure your .env file with necessary environment variables"
     echo "3. Set up your .functions.sh with custom functions"
-    echo "4. Run 'docker-compose up -d' in the traefik directory to start services"
-    echo "5. Configure DNS to use 127.0.0.1:53 for .local domains"
+    echo "4. Clone this repo to ~/Apps/setup to access Traefik configs:"
+    echo "   git clone $REPO_URL ~/Apps/setup"
+    echo "5. Run 'docker-compose up -d' in the traefik directory to start services"
+    echo "6. Configure DNS to use 127.0.0.1:53 for .local domains"
     echo ""
     echo "🔧 Tools installed:"
     echo "   • Homebrew package manager"
@@ -203,6 +239,7 @@ ALIAS_EOF
     echo "   • Node.js tooling (fnm, pnpm, bun)"
     echo "   • Development utilities (fzf, eza, zoxide, starship)"
     echo "   • Traefik and HAProxy Docker networks"
+    echo "   • Shell configuration files (.zshrc, .bash_aliases)"
     echo ""
     echo "Happy coding! 🚀"
 }
