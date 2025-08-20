@@ -19,9 +19,43 @@ jobs:
   test-install:
     runs-on: macos-latest
     
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_INSTALL_CLEANUP: 1
+    
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      
+    - name: Cache Homebrew packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/Library/Caches/Homebrew
+          /opt/homebrew/Cellar
+          /opt/homebrew/Caskroom
+        key: ${{ runner.os }}-homebrew-${{ hashFiles('install.sh') }}
+        restore-keys: |
+          ${{ runner.os }}-homebrew-
+          
+    - name: Cache Oh My Zsh and plugins
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.oh-my-zsh
+        key: ${{ runner.os }}-oh-my-zsh-${{ hashFiles('.zshrc') }}
+        restore-keys: |
+          ${{ runner.os }}-oh-my-zsh-
+          
+    - name: Cache Node.js tools
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.bun
+          ~/.local/share/fnm
+        key: ${{ runner.os }}-node-tools-v1
+        restore-keys: |
+          ${{ runner.os }}-node-tools-
       
     - name: Make install script executable
       run: chmod +x install.sh
@@ -209,3 +243,9 @@ jobs:
           echo "- Docker Desktop: Installed but not running in CI" >> $GITHUB_STEP_SUMMARY
           echo "- CLI tools: Available" >> $GITHUB_STEP_SUMMARY
         fi
+        
+    - name: Cleanup Homebrew cache
+      run: |
+        echo "🧹 Cleaning up Homebrew cache for next run..."
+        brew cleanup --prune=0
+        echo "✅ Cache cleanup complete"

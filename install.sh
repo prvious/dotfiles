@@ -144,9 +144,13 @@ main() {
     # Install Homebrew first
     install_homebrew
     
-    # Update Homebrew
-    echo "🔄 Updating Homebrew..."
-    brew update
+    # Update Homebrew (skip in CI for speed)
+    if [ -z "${GITHUB_ACTIONS}" ]; then
+        echo "🔄 Updating Homebrew..."
+        brew update
+    else
+        echo "ℹ️  Skipping Homebrew update in CI for performance"
+    fi
     
     # Install essential tools via Homebrew
     echo "📋 Installing essential tools..."
