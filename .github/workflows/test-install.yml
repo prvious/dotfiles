@@ -148,19 +148,6 @@ jobs:
           exit 1
         fi
         
-        # Start Docker Desktop
-        echo "🚀 Starting Docker Desktop..."
-        open -a Docker --background
-        
-        # Quick check if Docker daemon becomes available
-        echo "⏳ Waiting for Docker daemon (30 second timeout)..."
-        timeout=30
-        while ! docker info >/dev/null 2>&1 && [ $timeout -gt 0 ]; do
-          sleep 2
-          timeout=$((timeout - 2))
-          echo "  Waiting... ($timeout seconds remaining)"
-        done
-        
         if docker info >/dev/null 2>&1; then
           echo "✅ Docker daemon is running!"
           
