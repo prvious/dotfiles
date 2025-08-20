@@ -97,6 +97,28 @@ jobs:
         test -f "$HOME/.zshrc"
         echo "✅ .zshrc file exists"
         
+    - name: Start Docker service
+      run: |
+        # Start Docker Desktop on macOS
+        open -a Docker --background
+        
+        # Wait for Docker to be ready
+        echo "⏳ Waiting for Docker to start..."
+        timeout=60
+        while ! docker info >/dev/null 2>&1 && [ $timeout -gt 0 ]; do
+          sleep 2
+          timeout=$((timeout - 2))
+          echo "  Waiting... ($timeout seconds remaining)"
+        done
+        
+        if docker info >/dev/null 2>&1; then
+          echo "✅ Docker is running"
+          docker --version
+        else
+          echo "❌ Docker failed to start within timeout"
+          exit 1
+        fi
+        
     - name: Verify Docker networks
       run: |
         docker network ls | grep traefik
