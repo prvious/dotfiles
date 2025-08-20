@@ -81,6 +81,51 @@ install_oh_my_zsh() {
     fi
 }
 
+# Function to setup dnsmasq for .local domains
+setup_dnsmasq() {
+    echo "🌐 Setting up dnsmasq for .local domain resolution..."
+    
+    # Create config directory if it doesn't exist
+    mkdir -p "$(brew --prefix)/etc/"
+    
+    # Configure dnsmasq for .local domains
+    if ! grep -q "address=/.local/127.0.0.1" "$(brew --prefix)/etc/dnsmasq.conf" 2>/dev/null; then
+        echo "📝 Configuring dnsmasq for .local domains..."
+        echo 'address=/.local/127.0.0.1' >> "$(brew --prefix)/etc/dnsmasq.conf"
+        echo 'port=53' >> "$(brew --prefix)/etc/dnsmasq.conf"
+    else
+        echo "✅ dnsmasq already configured for .local domains"
+    fi
+    
+    # Create resolver directory
+    sudo mkdir -p /etc/resolver
+    
+    # Add .local resolver
+    if [ ! -f /etc/resolver/local ]; then
+        echo "📝 Adding .local resolver..."
+        echo "nameserver 127.0.0.1" | sudo tee /etc/resolver/local > /dev/null
+    else
+        echo "✅ .local resolver already exists"
+    fi
+    
+    # Start dnsmasq service
+    if ! brew services list | grep -q "dnsmasq.*started"; then
+        echo "🚀 Starting dnsmasq service..."
+        sudo brew services start dnsmasq
+    else
+        echo "✅ dnsmasq service already running"
+    fi
+    
+    # Test DNS resolution
+    echo "🔍 Testing .local domain resolution..."
+    if dscacheutil -q host -a name test.local >/dev/null 2>&1; then
+        echo "✅ .local domain resolution working"
+    else
+        echo "⚠️  .local domain resolution may need a moment to activate"
+        echo "   Try: dscacheutil -q host -a name test.local"
+    fi
+}
+
 # Function to install zsh plugins
 install_zsh_plugins() {
     echo "🔌 Installing Zsh plugins..."
@@ -160,6 +205,7 @@ main() {
         "git"
         "docker"          # Docker CLI tools
         "docker-compose"  # Docker Compose
+        "dnsmasq"         # DNS forwarder for .local domains
         "gh"           # GitHub CLI
         "awscli"       # AWS CLI
         "zoxide"       # Smart cd command
@@ -203,6 +249,9 @@ main() {
     install_oh_my_zsh
     install_zsh_plugins
     
+    # Setup dnsmasq for .local domains
+    setup_dnsmasq
+    
     # Setup Docker networks for Traefik
     echo "🐳 Setting up Docker networks..."
     docker network create traefik 2>/dev/null || echo "✅ Traefik network already exists"
@@ -228,8 +277,8 @@ main() {
     
     # Install OpenCode if not present
     if ! command_exists opencode; then
-        echo "💻 OpenCode not found. You may want to install it manually."
-        echo "   Visit: https://github.com/sst/opencode for installation instructions"
+        echo "💻 Installing OpenCode..."
+        curl -fsSL https://opencode.ai/install | bash
     fi
     
     echo ""
@@ -242,12 +291,13 @@ main() {
     echo "4. Clone this repo to ~/Apps/setup to access Traefik configs:"
     echo "   git clone $REPO_URL ~/Apps/setup"
     echo "5. Run 'docker-compose up -d' in the traefik directory to start services"
-    echo "6. Configure DNS to use 127.0.0.1:53 for .local domains"
+    echo "6. Test .local domain resolution: dscacheutil -q host -a name test.local"
     echo ""
     echo "🔧 Tools installed:"
     echo "   • Homebrew package manager"
     echo "   • Oh My Zsh with plugins"
     echo "   • Docker and Docker Compose"
+    echo "   • dnsmasq for .local domain resolution"
     echo "   • GitHub CLI (gh)"
     echo "   • AWS CLI"
     echo "   • Node.js tooling (fnm, pnpm, bun)"

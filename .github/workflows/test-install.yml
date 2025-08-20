@@ -89,19 +89,20 @@ jobs:
                   # Update PATH to include Bun installation directory
                   export PATH="$HOME/.bun/bin:$PATH"
 
-                  tools=(
-                    "git:Git version control"
-                    "docker:Docker containerization"
-                    "docker-compose:Docker Compose"
-                    "gh:GitHub CLI"
-                    "aws:AWS CLI"
-                    "zoxide:Smart cd command"
-                    "starship:Cross-shell prompt"
-                    "eza:Modern ls replacement"
-                    "fnm:Fast Node Manager"
-                    "pnpm:Package manager"
-                    "bun:JavaScript runtime"
-                  )
+                tools=(
+                  "git:Git version control"
+                  "docker:Docker containerization"
+                  "docker-compose:Docker Compose"
+                  "dnsmasq:DNS forwarder"
+                  "gh:GitHub CLI"
+                  "aws:AWS CLI"
+                  "zoxide:Smart cd command"
+                  "starship:Cross-shell prompt"
+                  "eza:Modern ls replacement"
+                  "fnm:Fast Node Manager"
+                  "pnpm:Package manager"
+                  "bun:JavaScript runtime"
+                )
 
                   all_found=true
 
@@ -240,6 +241,38 @@ jobs:
                   test -d "$HOME/.docker/completions"
                   test -d "$HOME/.eza/completions/zsh"
                   echo "✅ Required directories created"
+                
+            - name: Verify dnsmasq setup
+              run: |
+                echo "🌐 Verifying dnsmasq configuration..."
+                
+                # Check if dnsmasq config exists
+                if [ -f "$(brew --prefix)/etc/dnsmasq.conf" ]; then
+                  echo "✅ dnsmasq configuration file exists"
+                  
+                  # Check for .local configuration
+                  if grep -q "address=/.local/127.0.0.1" "$(brew --prefix)/etc/dnsmasq.conf"; then
+                    echo "✅ .local domain configuration found"
+                  else
+                    echo "⚠️  .local domain configuration not found"
+                  fi
+                else
+                  echo "⚠️  dnsmasq configuration file not found"
+                fi
+                
+                # Check resolver
+                if [ -f "/etc/resolver/local" ]; then
+                  echo "✅ .local resolver exists"
+                else
+                  echo "⚠️  .local resolver not found"
+                fi
+                
+                # Check if dnsmasq service is running
+                if brew services list | grep -q "dnsmasq.*started"; then
+                  echo "✅ dnsmasq service is running"
+                else
+                  echo "ℹ️  dnsmasq service not running (may require sudo)"
+                fi
 
             - name: Verify placeholder files
               run: |
