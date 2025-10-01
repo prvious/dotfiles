@@ -17,6 +17,14 @@ if [[ "$OSTYPE" != "darwin"* ]]; then
     exit 1
 fi
 
+# Check if running as root/sudo
+if [ "$EUID" -eq 0 ]; then
+    echo "❌ This script should NOT be run with sudo or as root"
+    echo "   Homebrew installation requires a regular user account"
+    echo "   Please run without sudo: curl -fsSL https://raw.githubusercontent.com/munezaclovis/setup/refs/heads/main/install.sh | bash"
+    exit 1
+fi
+
 # Function to check if command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -33,19 +41,45 @@ cleanup() {
 # Set trap to cleanup on exit
 trap cleanup EXIT
 
+# Function to check and install Xcode Command Line Tools
+ensure_xcode_tools() {
+    # Check if Xcode Command Line Tools are installed
+    if ! xcode-select -p &>/dev/null; then
+        echo "📦 Xcode Command Line Tools are required but not installed"
+        echo "   Installing Xcode Command Line Tools..."
+        echo "   This is required for Homebrew and other development tools"
+        
+        # Trigger the installation
+        xcode-select --install 2>/dev/null || true
+        
+        echo ""
+        echo "⚠️  IMPORTANT: A dialog box has appeared to install Xcode Command Line Tools"
+        echo "   Please click 'Install' and wait for the installation to complete"
+        echo "   This may take several minutes depending on your internet connection"
+        echo ""
+        echo "   After installation completes, please re-run this script:"
+        echo "   curl -fsSL https://raw.githubusercontent.com/munezaclovis/setup/refs/heads/main/install.sh | bash"
+        echo ""
+        exit 1
+    else
+        echo "✅ Xcode Command Line Tools already installed"
+    fi
+}
+
 # Function to clone setup repository
 clone_setup_repo() {
     echo "📥 Downloading setup files..."
     
     # Install git first if not present
+    # Git should be available with Xcode Command Line Tools, but check anyway
     if ! command_exists git; then
         echo "📦 Installing git..."
         if command_exists brew; then
             brew install git
         else
-            # If Homebrew not available yet, install via Xcode command line tools
-            xcode-select --install 2>/dev/null || true
-            echo "⚠️  Please install Xcode command line tools and re-run this script"
+            echo "❌ Git is not available and Homebrew is not installed yet"
+            echo "   This shouldn't happen if Xcode Command Line Tools are installed"
+            echo "   Please ensure Xcode Command Line Tools are properly installed"
             exit 1
         fi
     fi
@@ -182,6 +216,9 @@ ENV_EOF
 # Main installation function
 main() {
     echo "🔧 Installing development tools..."
+    
+    # Check for Xcode Command Line Tools first
+    ensure_xcode_tools
     
     # Clone the setup repository first
     clone_setup_repo
