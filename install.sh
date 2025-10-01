@@ -22,6 +22,9 @@ if [ "$EUID" -eq 0 ]; then
     echo "❌ This script should NOT be run with sudo or as root"
     echo "   Homebrew installation requires a regular user account"
     echo "   Please run without sudo: curl -fsSL https://raw.githubusercontent.com/munezaclovis/setup/refs/heads/main/install.sh | bash"
+    echo ""
+    echo "   Note: The script will prompt for sudo password when needed for specific tasks"
+    echo "   (e.g., dnsmasq setup), but the script itself should run as a regular user."
     exit 1
 fi
 
@@ -118,6 +121,7 @@ install_oh_my_zsh() {
 # Function to setup dnsmasq for .local domains
 setup_dnsmasq() {
     echo "🌐 Setting up dnsmasq for .local domain resolution..."
+    echo "   Note: This step requires sudo access to modify system configuration"
     
     # Create config directory if it doesn't exist
     mkdir -p "$(brew --prefix)/etc/"
