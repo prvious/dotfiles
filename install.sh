@@ -96,6 +96,21 @@ clone_setup_repo() {
 install_homebrew() {
     if ! command_exists brew; then
         echo "📦 Installing Homebrew..."
+        
+        # Check if running in non-interactive mode
+        if [ ! -t 0 ]; then
+            echo ""
+            echo "⚠️  WARNING: Running in non-interactive mode (stdin is not a TTY)"
+            echo "   Homebrew installation requires sudo access and needs to prompt for your password."
+            echo ""
+            echo "   If the installation fails, please run this script interactively:"
+            echo "   1. Download: curl -fsSL https://raw.githubusercontent.com/munezaclovis/setup/refs/heads/main/install.sh -o setup.sh"
+            echo "   2. Run: bash setup.sh"
+            echo ""
+            echo "   Attempting Homebrew installation anyway..."
+            sleep 2
+        fi
+        
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         
         # Add Homebrew to PATH for Apple Silicon Macs
