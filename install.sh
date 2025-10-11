@@ -166,7 +166,7 @@ setup_config_files() {
     # Create placeholder files referenced in .zshrc
     touch "$HOME/.env" 2>/dev/null || true
     touch "$HOME/.fnm.sh" 2>/dev/null || true
-    touch "$HOME/.functions.sh" 2>/dev/null || true
+    cp "$TEMP_DIR/.functions.sh" "$HOME/.functions.sh" 2>/dev/null || true
     
     # Create .env file with placeholder content if it doesn't exist
     if [ ! -f "$HOME/.env" ] || [ ! -s "$HOME/.env" ]; then
