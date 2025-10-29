@@ -275,11 +275,14 @@ main() {
     )
     
     # Install Docker Desktop (includes daemon, buildx, and more)
-    if ! brew list --cask docker &>/dev/null; then
+    # Check if Docker is already available (from any source)
+    if command_exists docker; then
+        echo "✅ Docker already installed"
+    elif ! brew list --cask docker &>/dev/null; then
         echo "📦 Installing Docker Desktop..."
         brew install --cask docker
     else
-        echo "✅ Docker Desktop already installed"
+        echo "✅ Docker Desktop already installed via Homebrew"
     fi
     
     for package in "${brew_packages[@]}"; do
