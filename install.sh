@@ -17,6 +17,17 @@ if [[ "$OSTYPE" != "darwin"* ]]; then
     exit 1
 fi
 
+# Check if running as root/sudo
+if [ "$EUID" -eq 0 ]; then
+    echo "❌ This script should NOT be run with sudo or as root"
+    echo "   Homebrew installation requires a regular user account"
+    echo "   Please run without sudo: curl -fsSL https://raw.githubusercontent.com/munezaclovis/setup/refs/heads/main/install.sh | bash"
+    echo ""
+    echo "   Note: The script will prompt for sudo password when needed for specific tasks"
+    echo "   (e.g., dnsmasq setup), but the script itself should run as a regular user."
+    exit 1
+fi
+
 # Function to check if command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -33,19 +44,45 @@ cleanup() {
 # Set trap to cleanup on exit
 trap cleanup EXIT
 
+# Function to check and install Xcode Command Line Tools
+ensure_xcode_tools() {
+    # Check if Xcode Command Line Tools are installed
+    if ! xcode-select -p &>/dev/null; then
+        echo "📦 Xcode Command Line Tools are required but not installed"
+        echo "   Installing Xcode Command Line Tools..."
+        echo "   This is required for Homebrew and other development tools"
+        
+        # Trigger the installation
+        xcode-select --install 2>/dev/null || true
+        
+        echo ""
+        echo "⚠️  IMPORTANT: A dialog box has appeared to install Xcode Command Line Tools"
+        echo "   Please click 'Install' and wait for the installation to complete"
+        echo "   This may take several minutes depending on your internet connection"
+        echo ""
+        echo "   After installation completes, please re-run this script:"
+        echo "   curl -fsSL https://raw.githubusercontent.com/munezaclovis/setup/refs/heads/main/install.sh | bash"
+        echo ""
+        exit 1
+    else
+        echo "✅ Xcode Command Line Tools already installed"
+    fi
+}
+
 # Function to clone setup repository
 clone_setup_repo() {
     echo "📥 Downloading setup files..."
     
     # Install git first if not present
+    # Git should be available with Xcode Command Line Tools, but check anyway
     if ! command_exists git; then
         echo "📦 Installing git..."
         if command_exists brew; then
             brew install git
         else
-            # If Homebrew not available yet, install via Xcode command line tools
-            xcode-select --install 2>/dev/null || true
-            echo "⚠️  Please install Xcode command line tools and re-run this script"
+            echo "❌ Git is not available and Homebrew is not installed yet"
+            echo "   This shouldn't happen if Xcode Command Line Tools are installed"
+            echo "   Please ensure Xcode Command Line Tools are properly installed"
             exit 1
         fi
     fi
@@ -59,6 +96,21 @@ clone_setup_repo() {
 install_homebrew() {
     if ! command_exists brew; then
         echo "📦 Installing Homebrew..."
+        
+        # Check if running in non-interactive mode
+        if [ ! -t 0 ]; then
+            echo ""
+            echo "⚠️  WARNING: Running in non-interactive mode (stdin is not a TTY)"
+            echo "   Homebrew installation requires sudo access and needs to prompt for your password."
+            echo ""
+            echo "   If the installation fails, please run this script interactively:"
+            echo "   1. Download: curl -fsSL https://raw.githubusercontent.com/munezaclovis/setup/refs/heads/main/install.sh -o setup.sh"
+            echo "   2. Run: bash setup.sh"
+            echo ""
+            echo "   Attempting Homebrew installation anyway..."
+            sleep 2
+        fi
+        
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         
         # Add Homebrew to PATH for Apple Silicon Macs
@@ -84,6 +136,7 @@ install_oh_my_zsh() {
 # Function to setup dnsmasq for .local domains
 setup_dnsmasq() {
     echo "🌐 Setting up dnsmasq for .local domain resolution..."
+    echo "   Note: This step requires sudo access to modify system configuration"
     
     # Create config directory if it doesn't exist
     mkdir -p "$(brew --prefix)/etc/"
@@ -183,6 +236,9 @@ ENV_EOF
 main() {
     echo "🔧 Installing development tools..."
     
+    # Check for Xcode Command Line Tools first
+    ensure_xcode_tools
+    
     # Clone the setup repository first
     clone_setup_repo
     
@@ -219,11 +275,14 @@ main() {
     )
     
     # Install Docker Desktop (includes daemon, buildx, and more)
-    if ! brew list --cask docker &>/dev/null; then
+    # Check if Docker is already available (from any source)
+    if command_exists docker; then
+        echo "✅ Docker already installed"
+    elif ! brew list --cask docker &>/dev/null; then
         echo "📦 Installing Docker Desktop..."
         brew install --cask docker
     else
-        echo "✅ Docker Desktop already installed"
+        echo "✅ Docker Desktop already installed via Homebrew"
     fi
     
     for package in "${brew_packages[@]}"; do
