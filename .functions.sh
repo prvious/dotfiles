@@ -1,6 +1,6 @@
 # Docker devcontainer helper function
 # Run commands in the Docker container specified in .devcontainer/devcontainer.json
-d() {
+x() {
     # Check if .devcontainer/devcontainer.json exists
     if [ ! -f ".devcontainer/devcontainer.json" ]; then
         echo "❌ .devcontainer/devcontainer.json not found"
