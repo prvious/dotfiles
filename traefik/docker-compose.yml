@@ -4,80 +4,43 @@ services:
         ports:
             - '80:80'
             - '443:443'
-        deploy:
-            restart_policy:
-                condition: any
-                delay: 5s
+            - '5432:5432'
+        restart: always
         networks:
             - traefik
         volumes:
-            - letsencrypt:/letsencrypt
-            - '/var/run/docker.sock:/var/run/docker.sock:ro'
-            - ./traefik.yml:/etc/traefik/traefik.yml
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - ./traefik.yml:/etc/traefik/traefik.yml:ro
             - ./static/log:/var/log/traefik
+            - ./static/letsencrypt:/letsencrypt
+            - ./dynamic:/etc/traefik/dynamic:ro
+            - ./static/ca/rootCA.pem:/etc/ssl/cacert.pem:ro
         labels:
             - 'traefik.enable=true'
             - 'traefik.http.routers.traefik.rule=Host(`traefik.test`)'
             - 'traefik.http.routers.traefik.service=api@internal'
             - 'traefik.http.services.traefik.loadbalancer.server.port=8080'
-            - 'traefik.http.routers.traefik.entrypoints=web'
-            # global redirect to https
-            #- 'traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)'
-            #- 'traefik.http.routers.http-catchall.entrypoints=web'
-            #- 'traefik.http.routers.http-catchall.middlewares=redirect-to-https'
+            - 'traefik.http.routers.traefik.entrypoints=http,https'
+            - 'traefik.http.routers.traefik.tls=true'
+            - 'prvious.ssl.enable=true'
+            - 'prvious.ssl.domains=traefik.test,*.traefik.test'
 
-    haproxy:
-        image: 'byjg/easy-haproxy:4.2.0'
-        ports:
-            - '3306:3306'
-            - '1936:1936'
-        deploy:
-            restart_policy:
-                condition: any
-                delay: 5s
-        networks:
-            - haproxy
+    ssl:
+        image: 'ghcr.io/prvious/ssl:latest'
         volumes:
-            - '/var/run/docker.sock:/var/run/docker.sock:ro'
-            - './static/haproxy/templates/haproxy.cfg.j2:/scripts/templates/haproxy.cfg.j2'
-        environment:
-            - 'EASYHAPROXY_DISCOVER=docker'
-            - 'EASYHAPROXY_LETSENCRYPT_EMAIL=clovism@moroccanoil.com'
-            - 'EASYHAPROXY_CERTBOT_AUTOCONFIG=letsencrypt_test'
-
-    dns:
-        image: jpillora/dnsmasq
-        container_name: dnsmasq
-        deploy:
-            restart_policy:
-                condition: any
-                delay: 5s
-        ports:
-            - '53:53/udp'
-            # - '5380:8080'
-        logging:
-            options:
-                max-size: "1m"
-        volumes:
-            - '/etc/dnsmasq.conf:/etc/dnsmasq.conf'
+            - '/var/run/docker.sock:/var/run/docker.sock'
+            - './static/letsencrypt:/app/files/certs'
+            - './static/ca:/app/files/ca'
+            - './dynamic/conf/tls.yml:/app/files/traefik/tls.yml'
         networks:
             - traefik
-        healthcheck:
-            test: [ 'CMD-SHELL', 'nslookup localhost 127.0.0.1 || exit 1' ]
-            interval: 4s
-            timeout: 4s
-            retries: 8
-            start_period: 4s
-        labels:
-            - 'traefik.enable=true'
-            - 'traefik.http.routers.dns.rule=Host(`dns.test`)'
-            - 'traefik.http.services.dns.loadbalancer.server.port=8080'
-            - 'traefik.http.routers.dns.entrypoints=web'
+        environment:
+            - CHECK_INTERVAL=10000
+            - CERT_DIR=/letsencrypt/
+        restart: always
 
 networks:
     traefik:
         external: true
     haproxy:
         external: true
-volumes:
-    letsencrypt:

@@ -1,22 +1,29 @@
 entryPoints:
-  web:
-    address: ":80"
-  websecure:
-    address: ":443"
+    http:
+        address: ":80"
+        # http:
+        #     redirections:
+        #         entryPoint:
+        #             to: https
+        #             scheme: https
+    https:
+        address: ":443"
+
+    # Add a dedicated TCP entryPoint for Postgres SNI routing
+    pg:
+        address: ":5432"
 
 providers:
-  docker:
-    endpoint: "unix:///var/run/docker.sock"
-    network: "traefik"
-    exposedByDefault: false
+    docker:
+        endpoint: "unix:///var/run/docker.sock"
+        network: "traefik"
+        exposedByDefault: false
+    file:
+        directory: "/etc/traefik/dynamic/conf/"
+        watch: true
 
 api:
-  insecure: true
-  dashboard: true
+    dashboard: true
 
 log:
-  level: DEBUG
-  # filePath: "/var/log/traefik/traefik.log"
-  
-accessLog:
-  # filePath: "/var/log/traefik/access.log"
+    level: INFO
