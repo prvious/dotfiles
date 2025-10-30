@@ -26,7 +26,7 @@ d() {
 
     # Build the docker compose exec command
     local docker_cmd="docker-compose exec"
-    
+
     # Add user flag if remoteUser is specified
     if [ -n "$remote_user" ]; then
         docker_cmd="$docker_cmd -u $remote_user"
@@ -42,4 +42,10 @@ d() {
         # Execute the command
         eval "$docker_cmd \"$*\""
     fi
+}
+
+wip() {
+    git add .
+    git commit -m "🏃🏾‍♂️💨 wip"
+    git push origin HEAD
 }

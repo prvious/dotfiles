@@ -17,7 +17,7 @@ services:
             - ./static/log:/var/log/traefik
         labels:
             - 'traefik.enable=true'
-            - 'traefik.http.routers.traefik.rule=Host(`traefik.local`)'
+            - 'traefik.http.routers.traefik.rule=Host(`traefik.test`)'
             - 'traefik.http.routers.traefik.service=api@internal'
             - 'traefik.http.services.traefik.loadbalancer.server.port=8080'
             - 'traefik.http.routers.traefik.entrypoints=web'
@@ -70,7 +70,7 @@ services:
             start_period: 4s
         labels:
             - 'traefik.enable=true'
-            - 'traefik.http.routers.dns.rule=Host(`dns.local`)'
+            - 'traefik.http.routers.dns.rule=Host(`dns.test`)'
             - 'traefik.http.services.dns.loadbalancer.server.port=8080'
             - 'traefik.http.routers.dns.entrypoints=web'
 

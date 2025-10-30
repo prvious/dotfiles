@@ -61,7 +61,7 @@ ensure_xcode_tools() {
         echo "   This may take several minutes depending on your internet connection"
         echo ""
         echo "   After installation completes, please re-run this script:"
-        echo "   curl -fsSL https://raw.githubusercontent.com/munezaclovis/setup/refs/heads/main/install.sh | bash"
+        echo "   curl -fsSL https://raw.githubusercontent.com/prvious/dotfiles/refs/heads/main/install.sh | bash"
         echo ""
         exit 1
     else
@@ -77,14 +77,8 @@ clone_setup_repo() {
     # Git should be available with Xcode Command Line Tools, but check anyway
     if ! command_exists git; then
         echo "📦 Installing git..."
-        if command_exists brew; then
-            brew install git
-        else
-            echo "❌ Git is not available and Homebrew is not installed yet"
-            echo "   This shouldn't happen if Xcode Command Line Tools are installed"
-            echo "   Please ensure Xcode Command Line Tools are properly installed"
-            exit 1
-        fi
+
+        brew install git
     fi
     
     # Clone the repository to temp directory
@@ -133,32 +127,32 @@ install_oh_my_zsh() {
     fi
 }
 
-# Function to setup dnsmasq for .local domains
+# Function to setup dnsmasq for .test domains
 setup_dnsmasq() {
-    echo "🌐 Setting up dnsmasq for .local domain resolution..."
+    echo "🌐 Setting up dnsmasq for .test domain resolution..."
     echo "   Note: This step requires sudo access to modify system configuration"
     
     # Create config directory if it doesn't exist
     mkdir -p "$(brew --prefix)/etc/"
     
-    # Configure dnsmasq for .local domains
-    if ! grep -q "address=/.local/127.0.0.1" "$(brew --prefix)/etc/dnsmasq.conf" 2>/dev/null; then
-        echo "📝 Configuring dnsmasq for .local domains..."
-        echo 'address=/.local/127.0.0.1' >> "$(brew --prefix)/etc/dnsmasq.conf"
+    # Configure dnsmasq for .test domains
+    if ! grep -q "address=/.test/127.0.0.1" "$(brew --prefix)/etc/dnsmasq.conf" 2>/dev/null; then
+        echo "📝 Configuring dnsmasq for .test domains..."
+        echo 'address=/.test/127.0.0.1' >> "$(brew --prefix)/etc/dnsmasq.conf"
         echo 'port=53' >> "$(brew --prefix)/etc/dnsmasq.conf"
     else
-        echo "✅ dnsmasq already configured for .local domains"
+        echo "✅ dnsmasq already configured for .test domains"
     fi
     
     # Create resolver directory
     sudo mkdir -p /etc/resolver
     
-    # Add .local resolver
-    if [ ! -f /etc/resolver/local ]; then
-        echo "📝 Adding .local resolver..."
-        echo "nameserver 127.0.0.1" | sudo tee /etc/resolver/local > /dev/null
+    # Add .test resolver
+    if [ ! -f /etc/resolver/test ]; then
+        echo "📝 Adding .test resolver..."
+        echo "nameserver 127.0.0.1" | sudo tee /etc/resolver/test > /dev/null
     else
-        echo "✅ .local resolver already exists"
+        echo "✅ .test resolver already exists"
     fi
     
     # Start dnsmasq service
@@ -170,12 +164,12 @@ setup_dnsmasq() {
     fi
     
     # Test DNS resolution
-    echo "🔍 Testing .local domain resolution..."
-    if dscacheutil -q host -a name test.local >/dev/null 2>&1; then
-        echo "✅ .local domain resolution working"
+    echo "🔍 Testing .test domain resolution..."
+    if dscacheutil -q host -a name test.test >/dev/null 2>&1; then
+        echo "✅ .test domain resolution working"
     else
-        echo "⚠️  .local domain resolution may need a moment to activate"
-        echo "   Try: dscacheutil -q host -a name test.local"
+        echo "⚠️  .test domain resolution may need a moment to activate"
+        echo "   Try: dscacheutil -q host -a name test.test"
     fi
 }
 
@@ -217,19 +211,8 @@ setup_config_files() {
     fi
     
     # Create placeholder files referenced in .zshrc
-    touch "$HOME/.env" 2>/dev/null || true
-    touch "$HOME/.fnm.sh" 2>/dev/null || true
+    cp "$TEMP_DIR/.env.sh" "$HOME/.env.sh" 2>/dev/null || true
     cp "$TEMP_DIR/.functions.sh" "$HOME/.functions.sh" 2>/dev/null || true
-    
-    # Create .env file with placeholder content if it doesn't exist
-    if [ ! -f "$HOME/.env" ] || [ ! -s "$HOME/.env" ]; then
-        echo "📝 Creating .env file..."
-        cat > "$HOME/.env" << 'ENV_EOF'
-# Environment variables
-# Add your environment variables here
-# Example: export DATABASE_URL="your-database-url"
-ENV_EOF
-    fi
 }
 
 # Main installation function
@@ -239,11 +222,11 @@ main() {
     # Check for Xcode Command Line Tools first
     ensure_xcode_tools
     
-    # Clone the setup repository first
-    clone_setup_repo
-    
     # Install Homebrew first
     install_homebrew
+
+    # Clone the setup repository first
+    clone_setup_repo
     
     # Update Homebrew (skip in CI for speed)
     if [ -z "${GITHUB_ACTIONS}" ]; then
@@ -261,7 +244,7 @@ main() {
         "git"
         "docker"          # Docker CLI tools
         "docker-compose"  # Docker Compose
-        "dnsmasq"         # DNS forwarder for .local domains
+        "dnsmasq"         # DNS forwarder for .test domains
         "gh"           # GitHub CLI
         "awscli"       # AWS CLI
         "zoxide"       # Smart cd command
@@ -269,8 +252,6 @@ main() {
         "eza"          # Modern ls replacement
         "fnm"          # Fast Node Manager
         "pnpm"         # Package manager
-        "mysql-client" # MySQL client
-        "composer"     # PHP package manager
         "fzf"          # Fuzzy finder
     )
     
@@ -286,11 +267,13 @@ main() {
     fi
     
     for package in "${brew_packages[@]}"; do
-        if ! brew list "$package" &>/dev/null; then
+        if command_exists "$package"; then
+            echo "✅ $package already installed"
+        elif ! brew list "$package" &>/dev/null; then
             echo "📦 Installing $package..."
             brew install "$package"
         else
-            echo "✅ $package already installed"
+            echo "✅ $package already installed Via Homebrew"
         fi
     done
     
@@ -308,7 +291,7 @@ main() {
     install_oh_my_zsh
     install_zsh_plugins
     
-    # Setup dnsmasq for .local domains
+    # Setup dnsmasq for .test domains
     setup_dnsmasq
     
     # Setup Docker networks for Traefik
@@ -347,22 +330,22 @@ main() {
     echo "1. Restart your terminal or run: source ~/.zshrc"
     echo "2. Configure your .env file with necessary environment variables"
     echo "3. Set up your .functions.sh with custom functions"
-    echo "4. Clone this repo to ~/Apps/setup to access Traefik configs:"
-    echo "   git clone $REPO_URL ~/Apps/setup"
+    echo "4. Clone this repo to access Traefik configs:"
+    echo "   git clone $REPO_URL traefik"
     echo "5. Run 'docker-compose up -d' in the traefik directory to start services"
-    echo "6. Test .local domain resolution: dscacheutil -q host -a name test.local"
+    echo "6. Test .test domain resolution: dscacheutil -q host -a name test.test"
     echo ""
     echo "🔧 Tools installed:"
     echo "   • Homebrew package manager"
     echo "   • Oh My Zsh with plugins"
     echo "   • Docker and Docker Compose"
-    echo "   • dnsmasq for .local domain resolution"
+    echo "   • dnsmasq for .test domain resolution"
     echo "   • GitHub CLI (gh)"
     echo "   • AWS CLI"
     echo "   • Node.js tooling (fnm, pnpm, bun)"
     echo "   • Development utilities (fzf, eza, zoxide, starship)"
     echo "   • Traefik and HAProxy Docker networks"
-    echo "   • Shell configuration files (.zshrc, .bash_aliases)"
+    echo "   • Shell configuration files (.zshrc, .env.sh)"
     echo ""
     echo "Happy coding! 🚀"
 }
