@@ -319,6 +319,20 @@ main() {
     # Install essential tools via Homebrew
     list_info "Installing essential tools..."
     
+    if command_exists jq; then
+        success "jq already installed"
+    else
+        package_info "Installing jq..."
+        brew install jq
+    fi
+    
+    if command_exists json5; then
+        success "json5 already installed"
+    else
+        package_info "Installing json5..."
+        brew install json5
+    fi
+    
     # Core development tools
     brew_packages=(
         "git"

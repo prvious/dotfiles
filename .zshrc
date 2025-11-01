@@ -15,7 +15,6 @@ else
 fi;
 
 
-source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source <(fzf --zsh)
 eval "$(starship init zsh)"
 eval "$(zoxide init zsh --cmd cd)"
