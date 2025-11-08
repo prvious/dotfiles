@@ -266,6 +266,11 @@ install_zsh_plugins() {
     if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fzf-tab" ]; then
         git clone https://github.com/Aloxaf/fzf-tab ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fzf-tab
     fi
+    
+    # zsh-bat
+    if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-bat" ]; then
+        git clone https://github.com/fdellwing/zsh-bat.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-bat
+    fi
 }
 
 # Function to setup configuration files
@@ -347,6 +352,7 @@ main() {
         "fnm"
         "pnpm"
         "fzf"
+        "bat"
     )
     
     # Install Docker Desktop (includes daemon, buildx, and more)
@@ -397,9 +403,11 @@ main() {
     folder_info "Creating necessary directories..."
     mkdir -p "$HOME/.local/bin"
     mkdir -p "$HOME/.local/share"
-    mkdir -p "$HOME/.docker/completions"
     mkdir -p "$HOME/.eza/completions/zsh"
     
+    mkdir -p ~/.oh-my-zsh/completions
+    docker completion zsh > "$HOME/.oh-my-zsh/completions/_docker"
+
     # Setup configuration files
     setup_config_files
     

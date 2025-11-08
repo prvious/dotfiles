@@ -5,7 +5,7 @@ if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
 fi
 
-export FPATH="~/.eza/completions/zsh:$HOME/.docker/completions:$FPATH"
+export FPATH="~/.eza/completions/zsh:$FPATH"
 
 autoload -Uz compinit
 if [[ -n ${ZDOTDIR}/.zcompdump(#qN.mh+24) ]]; then
@@ -20,7 +20,7 @@ eval "$(starship init zsh)"
 eval "$(zoxide init zsh --cmd cd)"
 eval "$(fnm env --shell zsh)"
 
-plugins=(git starship aws gh z zoxide zsh-autosuggestions fzf fzf-tab ssh ssh-agent fnm eza bun)
+plugins=(git starship aws gh z zoxide zsh-autosuggestions fzf fzf-tab ssh ssh-agent fnm eza bun zsh-bat)
 
 source $ZSH/oh-my-zsh.sh
 
