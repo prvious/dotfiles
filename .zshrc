@@ -1,11 +1,10 @@
 . ~/.env.sh
-. ~/.functions.sh
 
 if [ -f ~/.bash_aliases ]; then
     . ~/.bash_aliases
 fi
 
-export FPATH="~/.eza/completions/zsh:$FPATH"
+export FPATH="~/.eza/completions/zsh:$HOME/.docker/completions:$FPATH"
 
 autoload -Uz compinit
 if [[ -n ${ZDOTDIR}/.zcompdump(#qN.mh+24) ]]; then
@@ -70,3 +69,16 @@ zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
 zstyle ':fzf-tab:*' fzf-flags --color=fg:1,fg+:2 --bind=tab:accept
 zstyle ':fzf-tab:*' use-fzf-default-opts yes
 zstyle ':fzf-tab:*' switch-group '<' '>'
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# pnpm
+export PNPM_HOME="$HOME/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
+
+# opencode
+export PATH=$HOME/.opencode/bin:$PATH

@@ -46,7 +46,8 @@ The installer will:
     -   Development utilities (fzf, eza, zoxide, starship)
 -   Configure dnsmasq for `.test` domain resolution
 -   Setup Docker networks (traefik, haproxy)
--   Copy configuration files (.zshrc, .env.sh, .functions.sh)
+-   Copy configuration files (.zshrc, .env.sh)
+-   Create symlinks for scripts in ./scripts to ~/.local/bin
 -   Install OpenCode CLI tool
 -   Create necessary directories (~/.local/bin, ~/.docker/completions, etc.)
 
@@ -56,5 +57,4 @@ After installation:
 
 1. Restart your terminal or run: `source ~/.zshrc`
 2. Configure your `.env.sh` file with necessary environment variables
-3. Add custom functions to `.functions.sh` as needed
-4. Test .test domain resolution: `dscacheutil -q host -a name test.test`
+3. Test .test domain resolution: `dscacheutil -q host -a name test.test`

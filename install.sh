@@ -297,7 +297,6 @@ setup_config_files() {
     
     # Create placeholder files referenced in .zshrc
     cp "$TEMP_DIR/.env.sh" "$HOME/.env.sh" 2>/dev/null || true
-    cp "$TEMP_DIR/.functions.sh" "$HOME/.functions.sh" 2>/dev/null || true
 }
 
 # Main installation function
@@ -411,6 +410,14 @@ main() {
     # Setup configuration files
     setup_config_files
     
+    # Setup symlinks for .zshrc and scripts
+    info "Setting up symlinks..."
+    if [ -f "$TEMP_DIR/symlink.sh" ]; then
+        bash "$TEMP_DIR/symlink.sh"
+    else
+        warning "symlink.sh not found, skipping symlink setup"
+    fi
+    
     # Install OpenCode if not present
     if ! command_exists opencode; then
         code_info "Installing OpenCode..."
@@ -423,11 +430,10 @@ main() {
     list_info "Next steps:"
     echo "1. Restart your terminal or run: source ~/.zshrc"
     echo "2. Configure your .env file with necessary environment variables"
-    echo "3. Set up your .functions.sh with custom functions"
-    echo "4. Clone this repo to access Traefik configs:"
+    echo "3. Clone this repo to access Traefik configs:"
     echo "   git clone $REPO_URL traefik"
-    echo "5. Run 'docker-compose up -d' in the traefik directory to start services"
-    echo "6. Test .test domain resolution: dscacheutil -q host -a name test.test"
+    echo "4. Run 'docker-compose up -d' in the traefik directory to start services"
+    echo "5. Test .test domain resolution: dscacheutil -q host -a name test.test"
     echo ""
     wrench_info "Tools installed:"
     echo "   • Homebrew package manager"

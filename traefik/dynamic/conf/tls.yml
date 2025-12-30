@@ -1,0 +1,10 @@
+tls:
+  certificates:
+    - certFile: /letsencrypt/9b1feadba42f6ab04a3402ec02629ad5eb3ad6d0a46c086480bd29f4d4326ee1.pem
+      keyFile: /letsencrypt/9b1feadba42f6ab04a3402ec02629ad5eb3ad6d0a46c086480bd29f4d4326ee1-key.pem
+      stores:
+        - default
+    - certFile: /letsencrypt/50a25f8a721392566f4b5002db1704acbad16596f9e7a571a8008c9e0ac58005.pem
+      keyFile: /letsencrypt/50a25f8a721392566f4b5002db1704acbad16596f9e7a571a8008c9e0ac58005-key.pem
+      stores:
+        - default
