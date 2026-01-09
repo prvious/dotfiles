@@ -4,10 +4,31 @@
 # Run commands in the Docker container specified in .devcontainer/devcontainer.json
 
 # Handle special subcommands first
-if [ $# -gt 0 ]; then
+# Only trigger subcommands if it's the only argument (no other args)
+if [ $# -eq 1 ]; then
     case "$1" in
         "code"|"open")
             "$HOME/.local/bin/devcontainer-insiders" open
+            exit $?
+            ;;
+        "up")
+            "$HOME/.local/bin/devcontainer-insiders" up
+            exit $?
+            ;;
+        "down")
+            docker compose down
+            exit $?
+            ;;
+        "stop")
+            docker compose stop
+            exit $?
+            ;;
+        "rm")
+            docker compose rm
+            exit $?
+            ;;
+        "build")
+            "$HOME/.local/bin/devcontainer-insiders" build
             exit $?
             ;;
     esac
