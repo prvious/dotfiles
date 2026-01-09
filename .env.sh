@@ -1,3 +1,4 @@
+export HOMEBREW_NO_ENV_HINTS=1
 export ZSH="$HOME/.oh-my-zsh"
 export FZF_BASE="$(brew --prefix fzf)"
 export BUN_INSTALL="$HOME/.bun"
