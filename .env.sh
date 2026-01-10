@@ -1,22 +1,7 @@
 export HOMEBREW_NO_ENV_HINTS=1
-export ZSH="$HOME/.oh-my-zsh"
-export FZF_BASE="$(brew --prefix fzf)"
 export BUN_INSTALL="$HOME/.bun"
 
-export PATH="$BUN_INSTALL/bin:$PNPM_HOME/$HOME/.opencode/bin:$HOME/bin:$HOME/.local/bin:/usr/local/bin:/bin:$HOME/.composer/vendor/bin:$HOME/.cargo/bin:$PATH"
-
-# pnpm
-export PNPM_HOME="/opt/homebrew/opt/pnpm/bin"
-case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-
-# bun completions
-[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
-
-# opencode
-export PATH=$HOME/.opencode/bin:$PATH
+export PATH="$BUN_INSTALL/bin:$HOME/bin:$HOME/.local/bin:/usr/local/bin:$HOME/.composer/vendor/bin:$HOME/.cargo/bin:$PATH"
 
 export UID=$(id -u)
 export GID=$(id -g)

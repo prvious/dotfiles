@@ -1,67 +1,48 @@
-#!/bin/bash
+#!/bin/zsh
 
-# Docker devcontainer helper script
-# Run commands in the Docker container specified in .devcontainer/devcontainer.json
+# Docker devcontainer proxy - run commands in container
+# Usage: x [command]     - run command in container
+#        x               - open shell in container
+#        x up|down|stop  - manage container lifecycle
 
-# Handle special subcommands first
-# Only trigger subcommands if it's the only argument (no other args)
-if [ $# -eq 1 ]; then
+set -e
+
+error() { echo "✗ $1" >&2; exit 1; }
+
+devcontainer="$HOME/.local/bin/devcontainer-insiders"
+
+# Subcommands
+if [[ $# -eq 1 ]]; then
     case "$1" in
-        "code"|"open")
-            "$HOME/.local/bin/devcontainer-insiders" open
-            exit $?
-            ;;
-        "up")
-            "$HOME/.local/bin/devcontainer-insiders" up
-            exit $?
-            ;;
-        "down")
-            docker compose down
-            exit $?
-            ;;
-        "stop")
-            docker compose stop
-            exit $?
-            ;;
-        "rm")
-            docker compose rm
-            exit $?
-            ;;
-        "build")
-            "$HOME/.local/bin/devcontainer-insiders" build
-            exit $?
-            ;;
+        code|open) exec "$devcontainer" open ;;
+        up)        exec "$devcontainer" up ;;
+        build)     exec "$devcontainer" build ;;
+        down)      exec docker compose down ;;
+        stop)      exec docker compose stop ;;
+        rm)        exec docker compose rm ;;
     esac
 fi
 
-# Validate environment
-if [ ! -f ".devcontainer/devcontainer.json" ]; then
-    echo "❌ .devcontainer/devcontainer.json not found"
-    exit 1
-fi
+# Validate
+config=".devcontainer/devcontainer.json"
+[[ -f "$config" ]] || error "No $config found"
+command -v bun &>/dev/null || error "bun required"
 
-if ! command -v jq &> /dev/null; then
-    echo "❌ jq is required but not installed"
-    echo "💡 Install with: brew install jq"
-    exit 1
-fi
+# Parse config with bun
+read -r service user < <(bun -e "
+    const c = await Bun.file('$config').json();
+    console.log(c.service ?? '', c.remoteUser ?? '');
+")
 
-# Parse devcontainer config
-service=$(json5 .devcontainer/devcontainer.json | jq -r '.service')
-remote_user=$(json5 .devcontainer/devcontainer.json | jq -r '.remoteUser')
+[[ -n "$service" ]] || error "No 'service' in $config"
 
-if [ -z "$service" ]; then
-    echo "❌ Could not find 'service' in .devcontainer/devcontainer.json"
-    exit 1
-fi
+# Build and execute
+cmd=(docker compose exec)
+[[ -n "$user" ]] && cmd+=(-u "$user")
+cmd+=("$service")
 
-# Build docker command
-docker_cmd="docker-compose exec"
-[ -n "$remote_user" ] && docker_cmd="$docker_cmd -u $remote_user"
-
-# Execute command or start shell
-if [ $# -eq 0 ]; then
-    eval "$docker_cmd $service zsh"
+if [[ $# -eq 0 ]]; then
+    "${cmd[@]}" zsh
 else
-    eval "$docker_cmd $service zsh -i -c \"$*\""
+    "${cmd[@]}" zsh -ic "$*"
 fi
