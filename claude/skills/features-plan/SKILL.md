@@ -5,7 +5,7 @@ description: Analyze user input and generate detailed feature specification file
 
 ## Description
 
-This command takes a user's feature request, analyzes it within the context of the project, and generates well-structured feature specification files in the `.features/` directory. Each feature gets its own markdown file that can be implemented using the `/work` command.
+This command takes a user's feature request, analyzes it within the context of the project, and generates well-structured feature specification files in the `.features/` directory. Each feature gets its own markdown file that can be implemented using the `/features-work` command.
 
 ## Instructions
 
@@ -138,7 +138,7 @@ After generating all feature files:
 - List all created feature files
 - Show the dependency tree if features depend on each other
 - Suggest the implementation order
-- Remind user to use `/work <feature-name>` to implement each feature
+- Remind user to use `/features-work <feature-name>` to implement each feature
 
 ## Important Notes
 
