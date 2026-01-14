@@ -31,6 +31,18 @@ When this command is invoked:
        - Work on that foundational feature instead
    - If all dependencies are satisfied or `depends_on` is null, proceed with the requested feature
    - **Notify the user** about the final decision: "✅ Working on `<actual-feature-name>`" (if different from requested)
+    - **Claim the feature**: before implementing, atomically claim the feature so no other agent starts it.
+       - If `[.features/done/<feature>.md]` exists, do NOT claim — the feature is already completed.
+       - If `[.features/working/<feature>.md]` exists, notify: "⚠️ `<feature>` is already claimed by another agent." and choose another feature.
+       - Otherwise, create the working directory and move the feature file into it:
+
+          ```bash
+          mkdir -p .features/working
+          mv .features/<original-markdown-path>.md .features/working/
+          ```
+
+       - This moves the specification to `.features/working/` as a lock while implementing.
+       - If implementation fails or is aborted, either move the file back to `.features/` or delete the working file to release the claim.
 
 2. **Read the Feature Specification**
    - Read the markdown file for the feature that will be implemented (may be different from the one originally requested)
@@ -60,11 +72,12 @@ When this command is invoked:
 
 7. **Complete the Feature**
    - Update the TodoWrite tool to mark all tasks as completed
-   - Move the feature markdown file to `.features/done/` directory:
-     ```bash
-     mkdir -p .features/done
-     mv .features/<original-markdown-path>.md .features/done/
-     ```
+   - Move the feature markdown file from `.features/working/` to `.features/done/` directory when finished:
+    ```bash
+    mkdir -p .features/done
+    mv .features/working/<original-markdown-path>.md .features/done/
+    ```
+   - Ensure the working lock is removed (the file should no longer exist in `.features/working/`).
    - Provide a summary of what was implemented
 
 ## Important Notes
