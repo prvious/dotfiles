@@ -45,6 +45,18 @@ main() {
         done
     fi
 
+    # Claude skills
+    if [[ -d "$SCRIPT_DIR/claude/skills" ]]; then
+        mkdir -p "$HOME/.claude"
+        if [[ -L "$HOME/.claude/skills" ]]; then
+            rm "$HOME/.claude/skills"
+        elif [[ -d "$HOME/.claude/skills" ]]; then
+            mv "$HOME/.claude/skills" "$HOME/.claude/skills.backup.$(date +%Y%m%d_%H%M%S)"
+        fi
+        ln -s "$SCRIPT_DIR/claude/skills" "$HOME/.claude/skills"
+        success "claude/skills"
+    fi
+
     echo ""
     success "Symlinks created"
 }

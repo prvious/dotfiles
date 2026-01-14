@@ -1,10 +1,14 @@
 tls:
   certificates:
-    - certFile: /letsencrypt/9b1feadba42f6ab04a3402ec02629ad5eb3ad6d0a46c086480bd29f4d4326ee1.pem
-      keyFile: /letsencrypt/9b1feadba42f6ab04a3402ec02629ad5eb3ad6d0a46c086480bd29f4d4326ee1-key.pem
+    - certFile: /letsencrypt/5407970b958b955a42350feb9fd4ff1c5da15dc88e95453c2c5c06809b188d0a.pem
+      keyFile: /letsencrypt/5407970b958b955a42350feb9fd4ff1c5da15dc88e95453c2c5c06809b188d0a-key.pem
       stores:
         - default
-    - certFile: /letsencrypt/50a25f8a721392566f4b5002db1704acbad16596f9e7a571a8008c9e0ac58005.pem
-      keyFile: /letsencrypt/50a25f8a721392566f4b5002db1704acbad16596f9e7a571a8008c9e0ac58005-key.pem
+    - certFile: /letsencrypt/ad68e4ae189aa142e92c4050f8b4034a80c60dfc2be4e5b794ad1c75ab93f6bf.pem
+      keyFile: /letsencrypt/ad68e4ae189aa142e92c4050f8b4034a80c60dfc2be4e5b794ad1c75ab93f6bf-key.pem
+      stores:
+        - default
+    - certFile: /letsencrypt/adc5fede12f4b8eb0c955caf02855740579d23665fd977543d56c45bb5cfeb48.pem
+      keyFile: /letsencrypt/adc5fede12f4b8eb0c955caf02855740579d23665fd977543d56c45bb5cfeb48-key.pem
       stores:
         - default

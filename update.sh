@@ -65,6 +65,17 @@ main() {
         opencode upgrade && success "opencode"
     fi
 
+    # Claude Code
+    if command_exists claude; then
+        info "Updating Claude Code..."
+        claude update && success "Claude Code" || success "Claude Code (up to date)"
+    fi
+
+    # Re-run symlinks (includes claude skills)
+    if [[ -n "$DOTFILES_DIR" && -f "$DOTFILES_DIR/symlink.sh" ]]; then
+        bash "$DOTFILES_DIR/symlink.sh"
+    fi
+
     echo ""
     success "All updated!"
 }

@@ -21,7 +21,12 @@ command_exists() { command -v "$1" >/dev/null 2>&1; }
 
 # Detect if running from existing repo or via curl
 detect_source() {
-    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local script_dir
+    if [[ -n "${BASH_SOURCE[0]}" ]]; then
+        script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    else
+        script_dir="$(pwd)"
+    fi
 
     # Check if we're in a repo with .zshrc (local install)
     if [[ -f "$script_dir/.zshrc" && -f "$script_dir/.env.sh" ]]; then
@@ -51,8 +56,12 @@ setup_dotfiles_dir() {
 
 # Validate environment
 validate_env() {
-    [[ "$OSTYPE" != "darwin"* ]] && error "This script is for macOS only"
-    [[ "$EUID" -eq 0 ]] && error "Don't run as root. Script will prompt for sudo when needed."
+    if [[ "$OSTYPE" != "darwin"* ]]; then
+        error "This script is for macOS only"
+    fi
+    if [[ "$EUID" -eq 0 ]]; then
+        error "Don't run as root. Script will prompt for sudo when needed."
+    fi
 }
 
 # Xcode CLI tools
@@ -71,7 +80,9 @@ install_homebrew() {
     if ! command_exists brew; then
         info "Installing Homebrew..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        [[ $(uname -m) == "arm64" ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
+        if [[ $(uname -m) == "arm64" ]]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        fi
     fi
     success "Homebrew"
 }
@@ -120,9 +131,13 @@ setup_dnsmasq() {
     fi
 
     sudo mkdir -p /etc/resolver
-    [[ ! -f /etc/resolver/test ]] && echo "nameserver 127.0.0.1" | sudo tee /etc/resolver/test > /dev/null
+    if [[ ! -f /etc/resolver/test ]]; then
+        echo "nameserver 127.0.0.1" | sudo tee /etc/resolver/test > /dev/null
+    fi
 
-    brew services list | grep -q "dnsmasq.*started" || sudo brew services start dnsmasq
+    if ! brew services list | grep -q "dnsmasq.*started"; then
+        sudo brew services start dnsmasq
+    fi
     success "dnsmasq (.test domains)"
 }
 
@@ -142,7 +157,9 @@ main() {
     cd "$DOTFILES_DIR"
 
     # Update brew (skip in CI)
-    [[ -z "${GITHUB_ACTIONS}" ]] && brew update
+    if [[ -z "${GITHUB_ACTIONS}" ]]; then
+        brew update
+    fi
 
     # Install packages
     echo ""
@@ -179,6 +196,13 @@ main() {
         INSTALL_DIR="$HOME/.opencode" curl -fsSL https://opencode.ai/install | bash
     fi
     success "OpenCode"
+
+    # Claude Code
+    if ! command_exists claude; then
+        info "Installing Claude Code..."
+        curl -fsSL https://claude.ai/install.sh | bash
+    fi
+    success "Claude Code"
 
     echo ""
     install_zinit
