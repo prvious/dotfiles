@@ -30,7 +30,8 @@ command -v bun &>/dev/null || error "bun required"
 
 # Parse config with bun
 read -r service user < <(bun -e "
-    const c = await Bun.file('$config').json();
+    const text = await Bun.file('$config').text();
+    const c = Bun.JSONC.parse(text);
     console.log(c.service ?? '', c.remoteUser ?? '');
 ")
 
