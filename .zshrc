@@ -112,5 +112,8 @@ esac
 # opencode
 export PATH="$HOME/.opencode/bin:$PATH"
 
+# go
+export PATH="$HOME/go/bin:$PATH"
+
 # bun completions
 [ -s "/Users/clovismuneza/.bun/_bun" ] && source "/Users/clovismuneza/.bun/_bun"
