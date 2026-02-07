@@ -45,6 +45,10 @@ main() {
         done
     fi
 
+    # Claude settings
+    mkdir -p "$HOME/.claude"
+    symlink "$SCRIPT_DIR/claude/settings.json" "$HOME/.claude/settings.json"
+
     # Claude skills
     if [[ -d "$SCRIPT_DIR/claude/skills" ]]; then
         mkdir -p "$HOME/.claude"
