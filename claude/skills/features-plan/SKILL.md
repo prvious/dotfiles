@@ -12,9 +12,14 @@ This command takes a user's feature request, analyzes it within the context of t
 When this command is invoked:
 
 1. **Gather Project Context**
-   - Read `README.md` in the project root to understand the project structure, technologies, and conventions
-   - Read `CLAUDE.md` in the project root (if it exists) for additional project guidelines and context
-   - Identify the tech stack, testing frameworks, and code formatting tools in use
+   - **For Laravel projects**:
+     - Use the `application-info` tool from Laravel Boost to gather comprehensive project information (PHP version, Laravel version, installed packages, models, etc.)
+     - Read custom guidelines from `.ai/` directory files (if they exist) for project-specific conventions
+     - Check for Laravel Roster integration (if available) for detailed project structure analysis
+   - **For all projects**:
+     - Read `README.md` in the project root to understand the project structure, technologies, and conventions
+     - Read `CLAUDE.md` in the project root (if it exists) for additional project guidelines and context
+     - Identify the tech stack, testing frameworks, and code formatting tools in use
 
 2. **Analyze User Input**
    - Parse the user's request carefully
@@ -56,11 +61,13 @@ depends_on: <comma-separated list of feature names this depends on, or null>
 ## Implementation Plan
 
 ### Backend Components (if applicable)
-- Controllers: <list controllers to create/modify>
-- Models: <list models to create/modify>
-- Services/Actions: <list services or actions>
-- Routes/APIs: <list endpoints>
-- Database changes: <migrations, schema updates>
+- **Controllers**: <list controllers to create/modify>
+- **Models**: <list models to create/modify with factories>
+- **Actions**: <list Action classes following .ai/actions guidelines>
+- **Services**: <list Service classes following .ai/services guidelines>
+- **Form Requests**: <validation classes for request handling>
+- **Routes/APIs**: <list endpoints with route names>
+- **Database changes**: <migrations following .ai/migrations guidelines - no defaults, no enums>
 
 ### Frontend Components (if applicable)
 - Pages: <list pages to create/modify>
@@ -121,52 +128,90 @@ Based on the project's language and setup:
   - E2E tests (Playwright) for critical user flows
   
 - **Laravel projects**:
-  - Unit tests (pest) for functions and classes
-  - Integration tests for API endpoints
-  - E2E tests (pest-plugin-browser with playwright) for web interfaces
+  - Unit tests (Pest) for functions and classes in `tests/Unit/`
+  - Feature tests (Pest) for complete features/flows in `tests/Feature/`
+  - Browser tests (Pest Browser) for UI interactions in `tests/Browser/`
+  - Follow Laravel Boost guidelines from `.ai/tests` for test structure and conventions
 
 7. **Determine Formatting Tool**
 
 Identify from project files:
+- **Laravel projects**: Use `vendor/bin/pint` (Laravel Pint) as specified in Laravel Boost guidelines
 - `package.json` → Look for prettier, eslint, oxc
-- `composer.jsom` laravel/pint for ./vendor/bin/pint --parallel
+- `composer.json` → Laravel Pint for `./vendor/bin/pint --parallel`
 - `.gofmt` or `go.mod` → gofmt for Go
 
-8. **Provide Summary**
+8. **Laravel-Specific Planning** (if applicable)
+
+For Laravel projects, ensure feature specifications:
+- **Follow Action Pattern**: Business logic should use Action classes in `app/Actions/`
+- **Use Service Classes**: External system interactions should use Service classes in `app/Services/`
+- **Follow Migration Guidelines**: Never use `->default()` or `->enum()` in migrations (per `.ai/migrations`)
+- **Test Structure**:
+  - Unit tests in `tests/Unit/` for individual classes
+  - Feature tests in `tests/Feature/` for complete workflows
+  - Browser tests in `tests/Browser/` for UI interactions
+- **Factory Usage**: All models should have factories, use them in tests
+- **Formatting**: Always use Laravel Pint (`vendor/bin/pint`) for PHP code
+
+9. **Provide Summary**
 
 After generating all feature files:
 - List all created feature files
 - Show the dependency tree if features depend on each other
 - Suggest the implementation order
+- For Laravel projects: Remind about Action pattern, Service usage, and custom guidelines
 - Remind user to use `/features-work <feature-name>` to implement each feature
 
 ## Important Notes
 
-- **Always** read README.md and CLAUDE.md before analyzing the request
-- **Never guess** - ask clarifying questions when requirements are unclear
-- Ensure feature names are descriptive but concise (4-10 words)
-- Keep features focused - one feature should do one thing well
-- Specify realistic acceptance criteria that can be verified
-- Include error handling and edge cases in the implementation plan
-- Consider backwards compatibility if modifying existing features
-- Note security implications if handling sensitive data
-- Mention performance considerations for data-heavy operations
+- **For Laravel projects**:
+  - Use `application-info` tool from Laravel Boost to understand the project's package versions and conventions
+  - Follow custom guidelines from `.ai/` directory (actions, services, migrations, tests, etc.)
+  - Never reference or rely on "Spec" files - use Laravel Boost's tools and custom guidelines instead
+  - When Laravel Roster is available, use it for detailed project structure information
+- **For all projects**:
+  - **Always** read README.md and CLAUDE.md before analyzing the request
+  - **Never guess** - ask clarifying questions when requirements are unclear
+  - Ensure feature names are descriptive but concise (4-10 words)
+  - Keep features focused - one feature should do one thing well
+  - Specify realistic acceptance criteria that can be verified
+  - Include error handling and edge cases in the implementation plan
+  - Consider backwards compatibility if modifying existing features
+  - Note security implications if handling sensitive data
+  - Mention performance considerations for data-heavy operations
 
 ## Example Usage
+
+### Laravel Project Example
 
 ```
 /features-plan add user profile page with avatar upload and bio editing
 ```
 
 **Process**:
-1. Reads README.md and CLAUDE.md
-2. Identifies project is a Rails app with React frontend
-3. Creates two feature files:
+1. Calls `application-info` tool to gather Laravel project context
+2. Reads `.ai/` custom guidelines and CLAUDE.md
+3. Identifies project is Laravel with Inertia.js React frontend
+4. Creates two feature files:
    - `.features/user-profile-page.md` - Profile page UI
    - `.features/avatar-upload.md` - Avatar upload and storage
-4. Sets `avatar-upload` as dependency for `user-profile-page`
-5. Includes RSpec feature tests and Jest component tests
-6. Specifies RuboCop and Prettier for formatting
+5. Sets `avatar-upload` as dependency for `user-profile-page`
+6. Includes Pest feature tests and browser tests following `.ai/tests` guidelines
+7. Specifies Laravel Pint and Prettier for formatting
+
+### Non-Laravel Project Example
+
+```
+/features-plan add user authentication with email verification
+```
+
+**Process**:
+1. Reads README.md and CLAUDE.md
+2. Identifies project is a Rails app with React frontend
+3. Creates feature files following project conventions
+4. Includes RSpec feature tests and Jest component tests
+5. Specifies RuboCop and Prettier for formatting
 
 ## Common Patterns
 
@@ -201,8 +246,14 @@ Feature A    Feature B    Feature C
 
 ## Troubleshooting
 
+**For Laravel projects without Laravel Boost**:
+- If `application-info` tool is unavailable, read `composer.json` to identify packages and versions
+- Check `.ai/` directory for custom guidelines manually
+- Fall back to README.md and CLAUDE.md for project context
+
 **If README.md doesn't exist**:
-- Ask the user about project structure and tech stack
+- For Laravel projects: Use `application-info` tool to gather context
+- For other projects: Ask the user about project structure and tech stack
 - Request basic project information before proceeding
 
 **If user request is too vague**:
@@ -217,3 +268,10 @@ Feature A    Feature B    Feature C
 - Propose the breakdown to the user
 - Ask for confirmation before creating files
 - Allow user to adjust scope or dependencies
+
+**Laravel Roster Integration** (Future):
+- When Laravel Roster becomes available, use it to:
+  - Analyze project structure automatically
+  - Identify existing patterns and conventions
+  - Detect available models, controllers, and services
+  - Generate more accurate implementation plans

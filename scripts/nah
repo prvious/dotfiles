@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Reject all git changes
+# Discards uncommitted changes and removes untracked files
+
+git reset --hard
+git clean -fd
